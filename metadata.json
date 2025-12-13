@@ -1,0 +1,7 @@
+{
+  "name": "LifeLine",
+  "description": "A high-fidelity emergency response platform connecting hospitals and patients.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
