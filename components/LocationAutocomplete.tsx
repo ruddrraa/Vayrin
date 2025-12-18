@@ -135,7 +135,7 @@ export default function LocationAutocomplete({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-full bg-transparent outline-none text-base font-medium text-slate-900 placeholder:text-slate-400 pr-8"
+          className="w-full bg-transparent outline-none text-base font-medium text-white placeholder:text-white/50 pr-8"
         />
         {loading && (
           <div className="absolute right-8 w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
@@ -145,24 +145,24 @@ export default function LocationAutocomplete({
 
       {/* Suggestions Dropdown */}
       {isOpen && suggestions.length > 0 && (
-        <div className="absolute left-[-16px] right-[-16px] top-[calc(100%+8px)] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-[200] max-h-[300px] overflow-y-auto">
+        <div className="absolute left-[-16px] right-[-16px] top-[calc(100%+8px)] bg-black/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 overflow-hidden z-[200] max-h-[300px] overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <div
               key={suggestion.place_id || `suggestion-${index}`}
               onClick={() => handleSelectSuggestion(suggestion)}
               onMouseEnter={() => setHighlightIndex(index)}
               className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-150 ${
-                index === highlightIndex ? 'bg-blue-50' : 'hover:bg-slate-50'
-              } ${index !== suggestions.length - 1 ? 'border-b border-slate-100' : ''}`}
+                index === highlightIndex ? 'bg-white/10' : 'hover:bg-white/5'
+              } ${index !== suggestions.length - 1 ? 'border-b border-white/10' : ''}`}
             >
-              <div className="shrink-0 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                <MapPin size={14} className="text-slate-500" />
+              <div className="shrink-0 w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                <MapPin size={14} className="text-white/70" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm text-slate-900 truncate">
+                <p className="font-medium text-sm text-white truncate">
                   {suggestion.structured_formatting?.main_text || suggestion.description.split(',')[0]}
                 </p>
-                <p className="text-xs text-slate-400 truncate mt-0.5">
+                <p className="text-xs text-white/50 truncate mt-0.5">
                   {suggestion.structured_formatting?.secondary_text || suggestion.description.split(',').slice(1).join(',').trim()}
                 </p>
               </div>

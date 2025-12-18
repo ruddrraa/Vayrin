@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button, Input, Select, Label } from '../components/ui';
-import { Droplet, Ambulance as AmbulanceIcon, LogOut, Plus, Edit2, Trash2, X, Users, Eye, EyeOff, Package, Truck, CheckCircle, Settings, MapPin, Phone } from 'lucide-react';
+import { Droplet, Ambulance as AmbulanceIcon, LogOut, Plus, Edit2, Trash2, X, Users, Eye, EyeOff, Package, Truck, CheckCircle, Settings, MapPin, Phone, Activity } from 'lucide-react';
 import { motion as motionOriginal, AnimatePresence } from 'framer-motion';
 import { BloodType, AmbulanceType, Ambulance, BloodStock, Driver, AmbulanceStatus, OrderStatus } from '../types';
 
@@ -150,43 +150,36 @@ export default function HospitalDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50/50">
+    <div className="min-h-screen flex bg-black text-white">
       {/* Sidebar */}
-      <aside className="w-20 lg:w-64 bg-white/80 backdrop-blur-xl border-r border-slate-200 flex flex-col items-center lg:items-start py-8 lg:px-6 fixed h-full z-20 transition-all duration-300 overflow-y-auto">
-        <div className="mb-10 flex items-center gap-3 text-blue-600 font-bold text-2xl shrink-0">
-           {/* Logo / Upload Area */}
-           <label className="relative group cursor-pointer">
-              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-500/30 overflow-hidden">
-                {currentUser?.logoUrl ? (
-                    <img src={currentUser.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                ) : (
-                    <Plus size={20} className="rotate-45 group-hover:scale-110 transition-transform" />
-                )}
-              </div>
-           </label>
-          <span className="hidden lg:block">LifeLine</span>
+      <aside className="w-20 lg:w-64 bg-black/80 backdrop-blur-xl border-r border-white/10 flex flex-col items-center lg:items-start py-8 lg:px-6 fixed h-full z-20 transition-all duration-300 overflow-y-auto">
+        <div className="mb-10 flex items-center gap-3 text-white font-bold text-2xl shrink-0">
+           {/* VAYRIN Logo */}
+           <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg shadow-black/40">
+              <Activity className="text-black" size={20} />
+           </div>
+          <span className="hidden lg:block tracking-tight">VAYRIN</span>
         </div>
         
         <nav className="flex-1 w-full space-y-4 shrink-0">
-          <button onClick={() => setActiveTab('FLEET')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'FLEET' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
+          <button onClick={() => setActiveTab('FLEET')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'FLEET' ? 'bg-white/10 text-white shadow-sm' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
             <AmbulanceIcon size={24} /> <span className="hidden lg:block font-medium">Fleet Command</span>
           </button>
-          <button onClick={() => setActiveTab('DRIVERS')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'DRIVERS' ? 'bg-indigo-50 text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
+          <button onClick={() => setActiveTab('DRIVERS')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'DRIVERS' ? 'bg-white/10 text-white shadow-sm' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
             <Users size={24} /> <span className="hidden lg:block font-medium">Personnel</span>
           </button>
-          <button onClick={() => setActiveTab('BLOOD')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'BLOOD' ? 'bg-rose-50 text-rose-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
+          <button onClick={() => setActiveTab('BLOOD')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'BLOOD' ? 'bg-white/10 text-white shadow-sm' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
             <Droplet size={24} /> <span className="hidden lg:block font-medium">Blood Bank</span>
           </button>
-           <button onClick={() => setActiveTab('ORDERS')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'ORDERS' ? 'bg-emerald-50 text-emerald-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
+           <button onClick={() => setActiveTab('ORDERS')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'ORDERS' ? 'bg-white/10 text-white shadow-sm' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
             <Package size={24} /> <span className="hidden lg:block font-medium">Order Dispatch</span>
           </button>
-          <button onClick={() => setActiveTab('PROFILE')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'PROFILE' ? 'bg-slate-100 text-slate-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>
+          <button onClick={() => setActiveTab('PROFILE')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all ${activeTab === 'PROFILE' ? 'bg-white/10 text-white shadow-sm' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
             <Settings size={24} /> <span className="hidden lg:block font-medium">Settings</span>
           </button>
         </nav>
 
-        <button onClick={logout} className="mt-8 lg:mt-auto flex items-center gap-4 text-slate-400 hover:text-slate-600 px-4 mb-4 shrink-0 cursor-pointer">
+        <button onClick={logout} className="mt-8 lg:mt-auto flex items-center gap-4 text-white/60 hover:text-white px-4 mb-4 shrink-0 cursor-pointer">
           <LogOut size={24} /> <span className="hidden lg:block">Logout</span>
         </button>
       </aside>
@@ -195,14 +188,14 @@ export default function HospitalDashboard() {
       <main className="flex-1 ml-20 lg:ml-64 p-4 lg:p-8">
         <header className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-slate-800">
+            <h2 className="text-3xl font-bold text-white">
               {activeTab === 'FLEET' ? 'Ambulance Fleet' : activeTab === 'BLOOD' ? 'Blood Inventory' : activeTab === 'ORDERS' ? 'Incoming Orders' : activeTab === 'PROFILE' ? 'Hospital Profile' : 'Driver Management'}
             </h2>
             {activeTab !== 'PROFILE' && (
                 <div className="flex items-center gap-2 mt-1">
-                <div className={`w-2 h-2 rounded-full ${hospitalStatus ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-                <p className="text-slate-500 text-sm">
-                    Status: <span className={hospitalStatus ? "text-emerald-600 font-bold" : "text-slate-400 font-bold"}>{hospitalStatus ? 'Hospital Open' : 'Hospital Closed'}</span>
+                <div className={`w-2 h-2 rounded-full ${hospitalStatus ? 'bg-white animate-pulse' : 'bg-white/30'}`} />
+                <p className="text-white/60 text-sm">
+                    Status: <span className={hospitalStatus ? "text-white font-bold" : "text-white/50 font-bold"}>{hospitalStatus ? 'Hospital Open' : 'Hospital Closed'}</span>
                 </p>
                 </div>
             )}
@@ -211,16 +204,16 @@ export default function HospitalDashboard() {
           <div className="flex items-center gap-4">
              {/* Hospital Open/Close Toggle */}
              {activeTab !== 'PROFILE' && (
-                <div className="flex items-center bg-white rounded-full p-1 border border-slate-200 shadow-sm">
+              <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10 shadow-sm backdrop-blur">
                     <button 
                     onClick={() => !hospitalStatus && toggleHospitalStatus()}
-                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${hospitalStatus ? 'bg-emerald-100 text-emerald-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${hospitalStatus ? 'bg-white text-black shadow-sm' : 'text-white/60 hover:text-white'}`}
                     >
                     OPEN
                     </button>
                     <button 
                     onClick={() => hospitalStatus && toggleHospitalStatus()}
-                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${!hospitalStatus ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${!hospitalStatus ? 'bg-white text-black shadow-sm' : 'text-white/60 hover:text-white'}`}
                     >
                     CLOSED
                     </button>
@@ -228,7 +221,7 @@ export default function HospitalDashboard() {
              )}
              
              {['FLEET', 'BLOOD', 'DRIVERS'].includes(activeTab) && (
-                <Button onClick={openAddModal} className="bg-slate-900 text-white shadow-slate-500/30">
+               <Button onClick={openAddModal} className="bg-white text-black shadow-black/30 hover:bg-white/90">
                 <Plus size={20} /> Add {activeTab === 'FLEET' ? 'Vehicle' : activeTab === 'BLOOD' ? 'Stock' : 'Driver'}
                 </Button>
              )}

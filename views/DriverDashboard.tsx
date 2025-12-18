@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button } from '../components/ui';
 import { MapComponent } from '../components/MapComponent';
-import { LogOut, Navigation, CheckCircle, Power, Ambulance, Coffee, Clock } from 'lucide-react';
+import { LogOut, Navigation, CheckCircle, Power, Ambulance, Coffee, Clock, Activity } from 'lucide-react';
 import { motion as motionOriginal, AnimatePresence } from 'framer-motion';
 import { RideStatus } from '../types';
 
@@ -122,14 +122,16 @@ export default function DriverDashboard() {
       }
   };
 
-  return (
-    <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
-        <header className="bg-slate-900 text-white p-4 shadow-lg flex justify-between items-center z-20 shrink-0">
+    return (
+        <div className="h-screen bg-black text-white flex flex-col overflow-hidden">
+        <header className="bg-black/80 backdrop-blur-xl text-white p-4 shadow-lg flex justify-between items-center z-20 shrink-0 border-b border-white/10">
             <div className="flex items-center gap-3">
-                <div className="bg-slate-800 p-2 rounded-full"><Ambulance size={20} /></div>
+                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg shadow-black/40">
+                    <Activity className="text-black" size={20} />
+                </div>
                 <div>
-                    <h1 className="font-bold text-lg">Driver Console</h1>
-                    <p className="text-xs text-slate-400 opacity-90">{myAmbulance ? `Vehicle: ${myAmbulance.plateNumber}` : 'No Vehicle Assigned'}</p>
+                    <h1 className="font-bold text-lg tracking-tight">VAYRIN</h1>
+                    <p className="text-xs text-white/60">{myAmbulance ? `Vehicle: ${myAmbulance.plateNumber}` : 'No Vehicle Assigned'}</p>
                 </div>
             </div>
             
@@ -139,25 +141,25 @@ export default function DriverDashboard() {
                     <select
                         value={status}
                         onChange={(e) => handleDriverStatusUpdate(e.target.value)}
-                        className={`appearance-none pl-10 pr-8 py-2 rounded-full font-bold text-sm transition-all outline-none cursor-pointer border-2 border-transparent focus:border-white/20 ${
-                            status === 'ACTIVE' ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 
-                            status === 'ON_LEAVE' ? 'bg-amber-500 text-white' :
-                            'bg-slate-700 text-slate-300'
+                        className={`appearance-none pl-10 pr-8 py-2 rounded-full font-bold text-sm transition-all outline-none cursor-pointer border border-white/10 ${
+                            status === 'ACTIVE' ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)]' : 
+                            status === 'ON_LEAVE' ? 'bg-white/20 text-white' :
+                            'bg-white/5 text-white/60'
                         }`}
                     >
-                        <option value="ACTIVE" className="bg-white text-slate-800">● On Duty</option>
-                        <option value="OFF_DUTY" className="bg-white text-slate-800">○ Off Duty</option>
-                        <option value="ON_LEAVE" className="bg-white text-slate-800">⊘ On Leave</option>
+                        <option value="ACTIVE" className="bg-black text-white">● On Duty</option>
+                        <option value="OFF_DUTY" className="bg-black text-white">○ Off Duty</option>
+                        <option value="ON_LEAVE" className="bg-black text-white">⊘ On Leave</option>
                     </select>
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/90">
+                    <div className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${status === 'ACTIVE' ? 'text-black' : 'text-white/70'}`}>
                          {status === 'ACTIVE' ? <CheckCircle size={16} /> : status === 'ON_LEAVE' ? <Coffee size={16} /> : <Power size={16} />}
                     </div>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50 text-[10px]">
+                    <div className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] ${status === 'ACTIVE' ? 'text-black/50' : 'text-white/50'}`}>
                         ▼
                     </div>
                 </div>
 
-                <button onClick={logout} className="p-2 bg-white/10 rounded-full hover:bg-white/20"><LogOut size={20}/></button>
+                <button onClick={logout} className="p-2 bg-white/10 rounded-full hover:bg-white/20 border border-white/10 transition-all"><LogOut size={20}/></button>
             </div>
         </header>
 
@@ -180,25 +182,25 @@ export default function DriverDashboard() {
             </div>
 
             {/* Bottom Sheet / Sidebar */}
-            <div className="flex-none w-full lg:w-[400px] bg-white border-t lg:border-t-0 lg:border-l border-slate-200 shadow-2xl z-20 flex flex-col h-[40vh] lg:h-full">
+            <div className="flex-none w-full lg:w-[400px] bg-black/70 border-t lg:border-t-0 lg:border-l border-white/10 shadow-2xl shadow-black/40 z-20 flex flex-col h-[40vh] lg:h-full backdrop-blur-xl">
                 
                 {/* Stats Header */}
-                <div className="grid grid-cols-2 divide-x divide-slate-100 border-b border-slate-100 shrink-0">
+                <div className="grid grid-cols-2 divide-x divide-white/10 border-b border-white/10 shrink-0">
                     <div className="p-4 text-center">
-                        <div className="text-2xl font-black text-slate-900">$124</div>
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Earnings</div>
+                        <div className="text-2xl font-black text-white">$124</div>
+                        <div className="text-xs font-bold text-white/50 uppercase tracking-wider">Earnings</div>
                     </div>
                     <div className="p-4 text-center">
-                        <div className="text-2xl font-black text-slate-900">4.9</div>
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Rating</div>
+                        <div className="text-2xl font-black text-white">4.9</div>
+                        <div className="text-xs font-bold text-white/50 uppercase tracking-wider">Rating</div>
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 bg-slate-50">
+                <div className="flex-1 overflow-y-auto p-4 bg-black/30">
                     
                     {!isOnline ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                        <div className="h-full flex flex-col items-center justify-center text-white/60">
                             {status === 'ON_LEAVE' ? <Coffee size={48} className="mb-4 opacity-50 text-amber-500"/> : <Power size={48} className="mb-4 opacity-50" />}
                             <p className="font-medium text-lg">{status === 'ON_LEAVE' ? 'On Break' : 'You are Offline'}</p>
                             <p className="text-sm">Set your status to <b>On Duty</b> to receive requests</p>
@@ -207,33 +209,33 @@ export default function DriverDashboard() {
                         <>
                             {/* Active Ride UI */}
                             {activeRide ? (
-                                <Card className="border-l-4 border-blue-500 shadow-lg bg-white">
+                                <Card className="border-l-4 border-white/20 shadow-lg bg-white/5 border border-white/10 text-white">
                                     <div className="mb-4">
                                         <div className="flex justify-between items-center mb-2">
-                                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded uppercase">{activeRide.status}</span>
-                                            <span className="font-mono text-slate-500 text-xs">#{activeRide.id.slice(0,6)}</span>
+                                            <span className="px-2 py-1 bg-white/10 text-white text-xs font-bold rounded uppercase border border-white/10">{activeRide.status}</span>
+                                            <span className="font-mono text-white/50 text-xs">#{activeRide.id.slice(0,6)}</span>
                                         </div>
                                         <div className="space-y-4 relative">
-                                             <div className="absolute left-[7px] top-[24px] bottom-[24px] w-0.5 bg-slate-200" />
+                                             <div className="absolute left-[7px] top-[24px] bottom-[24px] w-0.5 bg-white/10" />
                                              <div className="flex items-start gap-3">
                                                  <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow mt-1 relative z-10" />
                                                  <div>
-                                                     <div className="text-xs text-slate-400 font-bold uppercase">Pickup</div>
-                                                     <div className="font-bold text-slate-800 text-sm">{activeRide.pickupAddress}</div>
+                                                     <div className="text-xs text-white/50 font-bold uppercase">Pickup</div>
+                                                     <div className="font-bold text-white text-sm">{activeRide.pickupAddress}</div>
                                                  </div>
                                              </div>
                                              <div className="flex items-start gap-3">
                                                  <div className="w-4 h-4 rounded-none bg-rose-500 border-2 border-white shadow mt-1 relative z-10" />
                                                   <div>
-                                                     <div className="text-xs text-slate-400 font-bold uppercase">Dropoff</div>
-                                                     <div className="font-bold text-slate-800 text-sm">{activeRide.dropAddress}</div>
+                                                     <div className="text-xs text-white/50 font-bold uppercase">Dropoff</div>
+                                                     <div className="font-bold text-white text-sm">{activeRide.dropAddress}</div>
                                                  </div>
                                              </div>
                                         </div>
                                     </div>
 
                                     {/* Actions */}
-                                    <div className="mt-4 pt-4 border-t border-slate-100">
+                                    <div className="mt-4 pt-4 border-t border-white/10">
                                         {activeRide.status === 'accepted' && (
                                             <Button onClick={() => handleRideStatusChange('in_progress')} className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg">
                                                 Arrived at Pickup
@@ -248,34 +250,34 @@ export default function DriverDashboard() {
                                 </Card>
                             ) : (
                                 /* Incoming Requests List */
-                                <div className="space-y-4">
+                                    <div className="space-y-4">
                                     <div className="flex justify-between items-center">
-                                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide">Incoming Requests ({availableRides.length})</h3>
-                                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/> LIVE</span>
+                                        <h3 className="text-xs font-bold text-white/60 uppercase tracking-wide">Incoming Requests ({availableRides.length})</h3>
+                                        <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-white/10 px-2 py-1 rounded-full border border-white/10"><div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"/> LIVE</span>
                                     </div>
                                     
                                     {availableRides.length === 0 ? (
-                                        <div className="py-10 text-center border-2 border-dashed border-slate-200 rounded-xl bg-white/50">
+                                        <div className="py-10 text-center border-2 border-dashed border-white/15 rounded-xl bg-white/5">
                                             <div className="animate-spin w-6 h-6 border-2 border-slate-300 border-t-blue-500 rounded-full mx-auto mb-3" />
-                                            <p className="text-sm text-slate-500 font-medium">Scanning area...</p>
+                                            <p className="text-sm text-white/60 font-medium">Scanning area...</p>
                                         </div>
                                     ) : (
                                         availableRides.map(req => (
                                             <motion.div key={req.id} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-                                                <Card className="border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                                                <Card className="border border-white/10 bg-white/5 shadow-sm hover:shadow-md transition-shadow text-white">
                                                     <div className="flex justify-between items-start mb-3">
                                                         <div className="flex items-center gap-2">
-                                                            <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center font-bold text-xs text-slate-600">
+                                                            <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center font-bold text-xs text-white/70">
                                                                 <Navigation size={14} />
                                                             </div>
-                                                            <div className="font-bold text-slate-800">{req.distance}</div>
+                                                            <div className="font-bold text-white">{req.distance}</div>
                                                         </div>
                                                         <div className="text-lg font-black text-emerald-600">${req.price}</div>
                                                     </div>
-                                                    <div className="text-sm text-slate-600 mb-4 line-clamp-1">
-                                                        <span className="font-bold text-slate-900">Pickup:</span> {req.pickupAddress}
+                                                    <div className="text-sm text-white/70 mb-4 line-clamp-1">
+                                                        <span className="font-bold text-white">Pickup:</span> {req.pickupAddress}
                                                     </div>
-                                                    <Button onClick={() => handleAccept(req.id)} className="w-full bg-slate-900 text-white shadow-lg shadow-slate-900/20">Accept Ride</Button>
+                                                    <Button onClick={() => handleAccept(req.id)} className="w-full bg-white text-black shadow-lg shadow-black/20 hover:bg-white/90">Accept Ride</Button>
                                                 </Card>
                                             </motion.div>
                                         ))

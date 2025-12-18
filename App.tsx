@@ -12,24 +12,23 @@ const motion = motionOriginal as any;
 
 // Full-screen loading component
 const LoadingScreen = () => (
-  <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center z-50">
+  <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
     <div className="relative">
-      {/* Pulsing background */}
-      <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-      
+      {/* Subtle pulse */}
+      <div className="absolute inset-0 bg-white/10 rounded-full blur-3xl animate-pulse" />
+
       {/* Logo */}
-      <div className="relative w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/30 mb-8">
-        <Activity size={40} className="text-white" />
+      <div className="relative w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-2xl shadow-black/40 mb-8">
+        <Activity size={40} className="text-black" />
       </div>
     </div>
-    
-    {/* Loading text */}
+
     <div className="text-center">
-      <h1 className="text-2xl font-bold text-white mb-2">LifeLine</h1>
-      <div className="flex items-center gap-2 text-slate-400">
-        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+      <h1 className="text-2xl font-bold text-white mb-2">VAYRIN</h1>
+      <div className="flex items-center gap-2 text-white/60">
+        <div className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style={{ animationDelay: '0ms' }} />
+        <div className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style={{ animationDelay: '150ms' }} />
+        <div className="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style={{ animationDelay: '300ms' }} />
       </div>
     </div>
   </div>

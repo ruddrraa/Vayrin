@@ -67,8 +67,8 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad
 
             const { OlaMaps } = olaSdkModule;
             const olaMaps = new OlaMaps({ apiKey: OLAMAPS_API_KEY });
-            // Basic style; replace with your hosted tiles style JSON if available
-            const styleUrl = 'https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json';
+            // Dark style for map
+            const styleUrl = 'https://api.olamaps.io/tiles/vector/v1/styles/default-dark-standard/style.json';
 
             // Assign an id to the container for Ola init API
             const containerEl = mapContainerRef.current as HTMLDivElement;
@@ -253,9 +253,9 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad
                                 'line-cap': 'round',
                             },
                             paint: {
-                                'line-color': '#1e293b',
+                                'line-color': '#000000',
                                 'line-width': 8,
-                                'line-opacity': 0.3,
+                                'line-opacity': 0.4,
                             },
                         });
                         
@@ -268,7 +268,7 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad
                                 'line-cap': 'round',
                             },
                             paint: {
-                                'line-color': '#1e293b',
+                                'line-color': '#ffffff',
                                 'line-width': 5,
                                 'line-opacity': 1,
                             },

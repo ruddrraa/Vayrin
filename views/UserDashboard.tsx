@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { MapComponent } from '../components/MapComponent';
 import { Card, Button, Input, Label } from '../components/ui';
 import { motion as motionOriginal, AnimatePresence } from 'framer-motion';
-import { Navigation, Droplet, ShoppingCart, LogOut, ArrowRight, CheckCircle2, Heart, Trash, CreditCard, X, AlertTriangle, FileText, Package, Clock, Calendar, Settings, Search, MapPin, Ambulance as AmbulanceIcon, LocateFixed, Minus, Plus } from 'lucide-react';
+import { Navigation, Droplet, ShoppingCart, LogOut, ArrowRight, CheckCircle2, Heart, Trash, CreditCard, X, AlertTriangle, FileText, Package, Clock, Calendar, Settings, Search, MapPin, Ambulance as AmbulanceIcon, LocateFixed, Minus, Plus, Activity } from 'lucide-react';
 import { Ambulance, AmbulanceStatus, Order } from '../types';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 
@@ -660,31 +660,33 @@ export default function UserDashboard() {
   };
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-slate-100 overflow-hidden">
+    <div className="h-screen flex flex-col md:flex-row bg-black text-white overflow-hidden">
         {/* Navigation Rail */}
-        <nav className="order-2 md:order-1 h-20 md:h-full w-full md:w-24 bg-white border-t md:border-t-0 md:border-r border-slate-200 flex flex-row md:flex-col items-center justify-around md:justify-start md:pt-10 z-30 shadow-lg md:shadow-none shrink-0">
-            <div className="hidden md:block w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl mb-10 shadow-lg shadow-blue-500/30" />
-            <button onClick={() => setActiveTab('RIDE')} className={`p-4 rounded-2xl transition-all relative group ${activeTab === 'RIDE' ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>
+        <nav className="order-2 md:order-1 h-20 md:h-full w-full md:w-24 bg-black/80 border-t md:border-t-0 md:border-r border-white/10 flex flex-row md:flex-col items-center justify-around md:justify-start md:pt-10 z-30 shadow-lg md:shadow-none shrink-0 backdrop-blur-xl">
+            <div className="hidden md:flex w-10 h-10 bg-white rounded-lg mb-10 shadow-lg shadow-black/40 items-center justify-center">
+                <Activity className="text-black" size={20} />
+            </div>
+            <button onClick={() => setActiveTab('RIDE')} className={`p-4 rounded-2xl transition-all relative group ${activeTab === 'RIDE' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
                 <Navigation size={28} />
                 <span className="hidden md:block absolute left-full ml-4 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50">Ambulance</span>
             </button>
-            <button onClick={() => setActiveTab('SHOP')} className={`p-4 rounded-2xl transition-all mt-0 md:mt-4 relative group ${activeTab === 'SHOP' ? 'bg-rose-100 text-rose-600' : 'text-slate-400 hover:text-slate-600'}`}>
+            <button onClick={() => setActiveTab('SHOP')} className={`p-4 rounded-2xl transition-all mt-0 md:mt-4 relative group ${activeTab === 'SHOP' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
                 <Droplet size={28} />
                 <span className="hidden md:block absolute left-full ml-4 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50">Blood Bank</span>
             </button>
-            <button onClick={() => setActiveTab('WISHLIST')} className={`p-4 rounded-2xl transition-all mt-0 md:mt-4 relative group ${activeTab === 'WISHLIST' ? 'bg-purple-100 text-purple-600' : 'text-slate-400 hover:text-slate-600'}`}>
+            <button onClick={() => setActiveTab('WISHLIST')} className={`p-4 rounded-2xl transition-all mt-0 md:mt-4 relative group ${activeTab === 'WISHLIST' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
                 <Heart size={28} />
                  <span className="hidden md:block absolute left-full ml-4 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50">Wishlist</span>
             </button>
-            <button onClick={() => setActiveTab('ORDERS')} className={`p-4 rounded-2xl transition-all mt-0 md:mt-4 relative group ${activeTab === 'ORDERS' ? 'bg-emerald-100 text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
+            <button onClick={() => setActiveTab('ORDERS')} className={`p-4 rounded-2xl transition-all mt-0 md:mt-4 relative group ${activeTab === 'ORDERS' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
                 <Package size={28} />
                  <span className="hidden md:block absolute left-full ml-4 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50">Orders</span>
             </button>
-             <button onClick={() => setActiveTab('PROFILE')} className={`p-4 rounded-2xl transition-all mt-0 md:mt-4 relative group ${activeTab === 'PROFILE' ? 'bg-slate-200 text-slate-600' : 'text-slate-400 hover:text-slate-600'}`}>
+             <button onClick={() => setActiveTab('PROFILE')} className={`p-4 rounded-2xl transition-all mt-0 md:mt-4 relative group ${activeTab === 'PROFILE' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}`}>
                 <Settings size={28} />
                  <span className="hidden md:block absolute left-full ml-4 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none z-50">Profile</span>
             </button>
-            <button onClick={logout} className="p-4 rounded-2xl text-slate-400 hover:text-rose-500 md:mt-auto md:mb-8 transition-colors"><LogOut size={28} /></button>
+            <button onClick={logout} className="p-4 rounded-2xl text-white/50 hover:text-white md:mt-auto md:mb-8 transition-colors"><LogOut size={28} /></button>
         </nav>
 
         {/* Content Area */}
@@ -706,10 +708,10 @@ export default function UserDashboard() {
                          </div>
 
                          {/* Side Panel (Desktop) / Bottom Sheet (Mobile) */}
-                         <div className="absolute top-0 left-0 w-full md:w-[420px] h-[55vh] md:h-full bg-white shadow-[0_-10px_60px_rgba(0,0,0,0.15)] md:shadow-2xl z-10 p-6 flex flex-col pointer-events-auto overflow-y-auto rounded-t-[2rem] md:rounded-none">
-                            <div className="md:hidden w-10 h-1 bg-slate-300 rounded-full mx-auto mb-5" /> {/* Mobile Handle */}
-                            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1 md:mt-4">LifeLine</h1>
-                            <p className="text-sm text-slate-400 mb-6">Book an ambulance</p>
+                                 <div className="absolute top-0 left-0 w-full md:w-[420px] h-[55vh] md:h-full bg-black/70 shadow-[0_-10px_60px_rgba(0,0,0,0.6)] md:shadow-2xl z-10 p-6 flex flex-col pointer-events-auto overflow-y-auto rounded-t-[2rem] md:rounded-none border-t border-white/10 md:border-t-0 md:border-r md:border-white/10 backdrop-blur-xl">
+                                     <div className="md:hidden w-10 h-1 bg-white/30 rounded-full mx-auto mb-5" /> {/* Mobile Handle */}
+                                     <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 md:mt-4">VAYRIN</h1>
+                                     <p className="text-sm text-white/60 mb-6">Book an ambulance</p>
                             <AnimatePresence mode="wait">
                                 {!activeRide && (
                                     <div className="flex-1 flex flex-col relative" ref={dropdownRef}>
@@ -718,8 +720,8 @@ export default function UserDashboard() {
                                             <div className="absolute left-[18px] top-12 bottom-12 w-0.5 bg-gradient-to-b from-blue-200 via-slate-200 to-rose-200 z-0 rounded-full" />
                                             {/* Pickup */}
                                             <div className="relative z-[15] mb-4">
-                                                <div className="flex items-center gap-3 bg-white px-4 py-3.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-300 transition-all">
-                                                    <div className="w-3 h-3 rounded-full bg-blue-500 ring-4 ring-blue-100 shrink-0" />
+                                                <div className="flex items-center gap-3 bg-white/5 px-4 py-3.5 rounded-xl border border-white/10 shadow-sm focus-within:ring-2 focus-within:ring-white/20 focus-within:border-white/20 transition-all">
+                                                    <div className="w-3 h-3 rounded-full bg-white shrink-0" />
                                                     <LocationAutocomplete
                                                         placeholder="Pickup Location"
                                                         value={pickup}
@@ -730,7 +732,7 @@ export default function UserDashboard() {
                                                             <button 
                                                                 type="button"
                                                                 onClick={handleCurrentLocation} 
-                                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                className="p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                                                             >
                                                                 <LocateFixed size={18} />
                                                             </button>
@@ -740,8 +742,8 @@ export default function UserDashboard() {
                                             </div>
                                             {/* Drop */}
                                             <div className="relative z-[5]">
-                                                <div className="flex items-center gap-3 bg-white px-4 py-3.5 rounded-xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-rose-500/20 focus-within:border-rose-300 transition-all">
-                                                    <div className="w-3 h-3 rounded-sm bg-rose-500 shrink-0" />
+                                                <div className="flex items-center gap-3 bg-white/5 px-4 py-3.5 rounded-xl border border-white/10 shadow-sm focus-within:ring-2 focus-within:ring-white/20 focus-within:border-white/20 transition-all">
+                                                    <div className="w-3 h-3 rounded-sm bg-white shrink-0" />
                                                     <LocationAutocomplete
                                                         placeholder="Where to?"
                                                         value={drop}
@@ -757,15 +759,15 @@ export default function UserDashboard() {
                                                 <motion.div 
                                                     initial={{ opacity: 0, y: 10 }}
                                                     animate={{ opacity: 1, y: 0 }}
-                                                    className="p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl border border-slate-200 mb-4"
+                                                    className="p-4 bg-white/5 rounded-2xl border border-white/10 mb-4"
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center">
-                                                            <AmbulanceIcon size={20} className="text-white" />
+                                                        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
+                                                            <AmbulanceIcon size={20} className="text-black" />
                                                         </div>
                                                         <div className="flex-1">
-                                                            <div className="font-bold text-slate-900">Trip summary</div>
-                                                            <div className="text-xs text-slate-500 flex gap-2">
+                                                            <div className="font-bold text-white">Trip summary</div>
+                                                            <div className="text-xs text-white/60 flex gap-2">
                                                                 <span>{distanceKm ? `${distanceKm.toFixed(1)} km` : 'Distance pending'}</span>
                                                                 <span>•</span>
                                                                 <span>{durationMin ? `${durationMin} min ETA` : 'ETA after routing'}</span>
@@ -773,8 +775,8 @@ export default function UserDashboard() {
                                                         </div>
                                                         {computedFare && (
                                                             <div className="text-right">
-                                                                <div className="font-bold text-lg text-slate-900">₹{computedFare.toFixed(0)}</div>
-                                                                <div className="text-[10px] text-slate-400">estimate</div>
+                                                                <div className="font-bold text-lg text-white">₹{computedFare.toFixed(0)}</div>
+                                                                <div className="text-[10px] text-white/50">estimate</div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -784,35 +786,36 @@ export default function UserDashboard() {
                                                     {availableAmbulances.length > 0 ? availableAmbulances.map((amb) => {
                                                         const isSelected = selectedAmbulanceId === amb.id;
                                                         const etaText = durationMin ? `${durationMin + 2} min` : 'ETA after confirm';
+                                                        const typeAbbrev = amb.type === 'ADVANCED' ? 'ADV' : amb.type === 'ICU' ? 'ICU' : amb.type === 'BASIC' ? 'BAS' : (amb.type || 'AMB').slice(0, 3).toUpperCase();
                                                         return (
                                                             <button
                                                                 key={amb.id}
                                                                 onClick={() => setSelectedAmbulanceId(amb.id)}
-                                                                className={`w-full text-left border rounded-2xl p-3.5 flex items-center gap-3 transition-all ${isSelected ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                                                                className={`w-full text-left border rounded-2xl p-3.5 flex items-center gap-3 transition-all ${isSelected ? 'border-white/30 bg-white/10 shadow-md' : 'border-white/10 hover:border-white/20 bg-white/5'}`}
                                                             >
-                                                                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 font-black text-lg">
-                                                                    {amb.type || 'AMB'}
+                                                                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white font-black text-sm">
+                                                                    {typeAbbrev}
                                                                 </div>
-                                                                <div className="flex-1">
+                                                                <div className="flex-1 min-w-0">
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="font-bold text-slate-900 capitalize">{(amb.type || 'Ambulance').toLowerCase()}</span>
-                                                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{amb.plateNumber || 'Plate pending'}</span>
+                                                                        <span className="font-bold text-white capitalize text-sm">{(amb.type || 'Ambulance').toLowerCase()}</span>
+                                                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/60 truncate">{amb.plateNumber || 'Plate pending'}</span>
                                                                     </div>
-                                                                    <div className="text-xs text-slate-500 mt-1">
-                                                                        Driver: {amb.driverName || 'On-call'} • Base ₹{amb.baseCharge || 0} • ₹{amb.pricePerKm || 0}/km
+                                                                    <div className="text-xs text-white/60 mt-1 truncate">
+                                                                        {amb.driverName || 'On-call'} • ₹{amb.baseCharge || 0} + ₹{amb.pricePerKm || 0}/km
                                                                     </div>
                                                                     {amb.equipment?.length > 0 && (
-                                                                        <div className="text-[11px] text-slate-400 mt-1 truncate">Equip: {amb.equipment.slice(0, 3).join(', ')}{amb.equipment.length > 3 ? '…' : ''}</div>
+                                                                        <div className="text-[10px] text-white/40 mt-0.5 truncate">{amb.equipment.slice(0, 2).join(', ')}</div>
                                                                     )}
                                                                 </div>
-                                                                <div className="text-right">
-                                                                    <div className="font-bold text-slate-900">₹{Math.max(amb.baseCharge || 0, (amb.baseCharge || 0) + Math.max((distanceKm || 5.2) - 1, 0) * (amb.pricePerKm || 0)).toFixed(0)}</div>
-                                                                    <div className="text-xs text-emerald-600">~{etaText}</div>
+                                                                <div className="text-right shrink-0">
+                                                                    <div className="font-bold text-white">₹{Math.max(amb.baseCharge || 0, (amb.baseCharge || 0) + Math.max((distanceKm || 5.2) - 1, 0) * (amb.pricePerKm || 0)).toFixed(0)}</div>
+                                                                    <div className="text-[10px] text-white/50">~{etaText}</div>
                                                                 </div>
                                                             </button>
                                                         );
                                                     }) : (
-                                                        <div className="text-sm text-slate-500 text-center py-6 border border-dashed border-slate-200 rounded-xl">No available ambulances right now.</div>
+                                                        <div className="text-sm text-white/60 text-center py-6 border border-dashed border-white/15 rounded-xl bg-white/5">No available ambulances right now.</div>
                                                     )}
                                                 </div>
                                             </>
@@ -915,43 +918,43 @@ export default function UserDashboard() {
 
                 {/* --- SHOP TAB --- */}
                 {activeTab === 'SHOP' && (
-                    <motion.div key="shop" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-slate-50">
-                        <header className="flex flex-col md:flex-row justify-between items-center mb-8 sticky top-0 bg-slate-50/80 backdrop-blur-md py-4 z-20 gap-4">
-                            <div><h2 className="text-3xl font-bold text-slate-800">Blood Marketplace</h2><p className="text-slate-500">Verified inventory from registered hospitals.</p></div>
+                    <motion.div key="shop" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-black">
+                        <header className="flex flex-col md:flex-row justify-between items-center mb-8 sticky top-0 bg-black/80 backdrop-blur-md py-4 z-20 gap-4">
+                            <div><h2 className="text-3xl font-bold text-white">Blood Marketplace</h2><p className="text-white/60">Verified inventory from registered hospitals.</p></div>
                             <div className="flex items-center gap-4 w-full md:w-auto">
                                 <div className="relative flex-1 md:w-64">
-                                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <input className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20" placeholder="Search blood type..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                                    <input className="w-full pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-rose-500/30" placeholder="Search blood type..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                                 </div>
                                 <div className="relative">
                                     <Button className="pl-4 pr-6 bg-rose-600 hover:bg-rose-700 shadow-rose-500/30 text-white" onClick={() => setShowCartDrawer(true)}>
                                         <ShoppingCart size={20} className="mr-2" /> Cart
                                     </Button>
-                                    {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-white text-rose-600 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-rose-100 shadow-sm">{cart.reduce((acc, item) => acc + item.quantity, 0)}</span>}
+                                    {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-white text-rose-600 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-black shadow-sm">{cart.reduce((acc, item) => acc + item.quantity, 0)}</span>}
                                 </div>
                             </div>
                         </header>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
                             {availableBloodStock.length > 0 ? (
                                 availableBloodStock.map((item) => (
-                                    <Card key={item.id} className="group hover:shadow-xl hover:shadow-rose-500/10 transition-all duration-300 border border-slate-100">
+                                    <Card key={item.id} className="group hover:shadow-xl hover:shadow-rose-500/10 transition-all duration-300 border border-white/10 bg-black">
                                         <div className="flex justify-between items-start mb-6">
-                                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100 text-rose-600 flex items-center justify-center font-black text-2xl shadow-inner group-hover:scale-110 transition-transform">{item.type}</div>
+                                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500/30 to-rose-600/40 text-rose-400 flex items-center justify-center font-black text-2xl shadow-inner group-hover:scale-110 transition-transform border border-rose-500/20">{item.type}</div>
                                             <div className="text-right">
-                                                <div className="text-xl font-bold text-slate-800">${item.price}</div>
-                                                <button onClick={() => toggleWishlist(item.id)} className={`mt-1 p-1 rounded-full transition-colors ${wishlist.includes(item.id) ? 'text-rose-500 bg-rose-50' : 'text-slate-300 hover:bg-slate-100'}`}><Heart size={16} fill={wishlist.includes(item.id) ? "currentColor" : "none"} /></button>
+                                                <div className="text-xl font-bold text-white">${item.price}</div>
+                                                <button onClick={() => toggleWishlist(item.id)} className={`mt-1 p-1 rounded-full transition-colors ${wishlist.includes(item.id) ? 'text-rose-500 bg-rose-500/20' : 'text-white/30 hover:bg-white/10'}`}><Heart size={16} fill={wishlist.includes(item.id) ? "currentColor" : "none"} /></button>
                                             </div>
                                         </div>
-                                        <div className="space-y-2 mb-6 border-b border-slate-50 pb-4">
-                                            <div className="text-sm font-bold text-slate-800 truncate">{item.hospitalName}</div>
-                                            <div className="flex justify-between text-xs text-slate-500"><span>Expires:</span><span className="font-medium text-slate-700">{item.expiryDate}</span></div>
-                                            <div className="flex justify-between text-xs"><span>Availability:</span><span className="text-emerald-600 font-bold">{item.units} Units</span></div>
+                                        <div className="space-y-2 mb-6 border-b border-white/10 pb-4">
+                                            <div className="text-sm font-bold text-white truncate">{item.hospitalName}</div>
+                                            <div className="flex justify-between text-xs text-white/50"><span>Expires:</span><span className="font-medium text-white/70">{item.expiryDate}</span></div>
+                                            <div className="flex justify-between text-xs"><span className="text-white/50">Availability:</span><span className="text-emerald-400 font-bold">{item.units} Units</span></div>
                                         </div>
-                                        <Button variant="secondary" className="w-full group-hover:bg-rose-600 group-hover:text-white group-hover:border-rose-600 transition-colors" onClick={() => addToCart(item)}>Add to Cart <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" /></Button>
+                                        <Button variant="secondary" className="w-full bg-white text-black border-white hover:bg-white/90 transition-colors font-semibold" onClick={() => addToCart(item)}>Add to Cart <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" /></Button>
                                     </Card>
                                 ))
                             ) : (
-                                <div className="col-span-full py-20 text-center text-slate-400"><p>No inventory found for "{searchTerm}".</p></div>
+                                <div className="col-span-full py-20 text-center text-white/40"><p>No inventory found for "{searchTerm}".</p></div>
                             )}
                         </div>
                     </motion.div>
@@ -959,22 +962,23 @@ export default function UserDashboard() {
 
                 {/* --- WISHLIST TAB --- */}
                 {activeTab === 'WISHLIST' && (
-                    <motion.div key="wishlist" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-slate-50">
-                        <header className="mb-8"><h2 className="text-3xl font-bold text-slate-800">My Wishlist</h2><p className="text-slate-500">Saved items for later.</p></header>
+                    <motion.div key="wishlist" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-black">
+                        <header className="mb-8"><h2 className="text-3xl font-bold text-white">My Wishlist</h2><p className="text-white/60">Saved items for later.</p></header>
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {wishlistItems.length > 0 ? (
                                 wishlistItems.map((item) => (
-                                    <Card key={item.id} className="border border-purple-100 hover:border-purple-300">
+                                    <Card key={item.id} className="border border-white/10 bg-black hover:border-rose-500/30">
                                         <div className="flex justify-between items-start mb-4">
-                                            <div className="text-lg font-bold text-purple-700">{item.type} Blood</div>
-                                            <button onClick={() => toggleWishlist(item.id)} className="text-purple-500 hover:bg-purple-50 p-2 rounded-full"><Heart fill="currentColor"/></button>
+                                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-rose-500/30 to-rose-600/40 text-rose-400 flex items-center justify-center font-black text-xl border border-rose-500/20">{item.type}</div>
+                                            <button onClick={() => toggleWishlist(item.id)} className="text-rose-500 hover:bg-rose-500/20 p-2 rounded-full"><Heart fill="currentColor"/></button>
                                         </div>
-                                        <div className="text-sm text-slate-500 mb-4">{item.hospitalName} • ${item.price}</div>
-                                        <Button className="w-full bg-purple-600 hover:bg-purple-700" onClick={() => addToCart(item)}>Move to Cart</Button>
+                                        <div className="text-sm font-bold text-white mb-1">{item.hospitalName}</div>
+                                        <div className="text-lg font-bold text-white mb-4">${item.price}</div>
+                                        <Button className="w-full bg-white text-black hover:bg-white/90 font-semibold" onClick={() => addToCart(item)}>Move to Cart</Button>
                                     </Card>
                                 ))
                             ) : (
-                                <div className="col-span-full flex flex-col items-center justify-center py-20 text-slate-400"><Heart size={48} className="mb-4 text-slate-200" /><p>Your wishlist is empty.</p></div>
+                                <div className="col-span-full flex flex-col items-center justify-center py-20 text-white/40"><Heart size={48} className="mb-4 text-white/20" /><p>Your wishlist is empty.</p></div>
                             )}
                          </div>
                     </motion.div>
@@ -982,28 +986,27 @@ export default function UserDashboard() {
 
                 {/* --- ORDERS TAB --- */}
                 {activeTab === 'ORDERS' && (
-                    <motion.div key="orders" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-slate-50">
-                         <header className="mb-8"><h2 className="text-3xl font-bold text-slate-800">Order History</h2><p className="text-slate-500">Track and view invoices.</p></header>
+                    <motion.div key="orders" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-black">
+                         <header className="mb-8"><h2 className="text-3xl font-bold text-white">Order History</h2><p className="text-white/60">Track and view invoices.</p></header>
                         <div className="space-y-4 max-w-4xl">
                             {orders.length > 0 ? (
                                 orders.map((order) => (
-                                    <Card key={order.id} className="flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-200">
-                                        <div className="flex items-start gap-4">
-                                            <div className="p-4 bg-emerald-50 rounded-2xl text-emerald-600"><Package size={24} /></div>
+                                    <Card key={order.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border border-white/10 bg-black p-5">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white"><Package size={22} /></div>
                                             <div>
-                                                <div className="text-xs text-slate-500 font-mono mb-1">ID: {order.id.slice(0, 8)}...</div>
-                                                <div className="font-bold text-slate-800">{order.items ? order.items.length : 0} Items • ${order.totalAmount}</div>
-                                                <div className="text-xs text-slate-500 mt-1">{new Date(order.createdAt).toLocaleDateString()}</div>
+                                                <div className="font-bold text-white text-lg">{order.items ? order.items.length : 0} Items • ${order.totalAmount}</div>
+                                                <div className="text-xs text-white/50 mt-0.5">Order #{order.id.slice(0, 8)} • {new Date(order.createdAt).toLocaleDateString()}</div>
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap items-center gap-4">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{order.status}</span>
-                                            <Button variant="secondary" className="text-xs h-8" onClick={() => setViewingOrder(order)}><FileText size={14} className="mr-2" /> Invoice</Button>
+                                        <div className="flex items-center gap-3">
+                                            <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${order.status === 'DELIVERED' ? 'bg-emerald-500 text-white' : order.status === 'DISPATCHED' ? 'bg-blue-500 text-white' : 'bg-amber-500 text-black'}`}>{order.status}</span>
+                                            <Button variant="secondary" className="h-9 px-4 bg-white text-black border-white hover:bg-white/90 font-semibold text-xs" onClick={() => setViewingOrder(order)}><FileText size={14} className="mr-1.5" /> Invoice</Button>
                                         </div>
                                     </Card>
                                 ))
                             ) : (
-                                <div className="text-center py-20 text-slate-400"><p>No past orders found.</p></div>
+                                <div className="text-center py-20 text-white/40 border border-dashed border-white/10 rounded-2xl"><Package size={48} className="mx-auto mb-4 text-white/20" /><p>No past orders found.</p></div>
                             )}
                         </div>
                     </motion.div>
@@ -1011,15 +1014,27 @@ export default function UserDashboard() {
 
                 {/* --- PROFILE TAB --- */}
                 {activeTab === 'PROFILE' && (
-                    <motion.div key="profile" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-slate-50">
+                    <motion.div key="profile" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-black">
                          <div className="max-w-xl mx-auto">
-                             <Card>
-                                <div className="mb-6 border-b border-slate-100 pb-4"><h3 className="text-xl font-bold text-slate-800">My Profile</h3></div>
-                                <form onSubmit={handleProfileUpdate} className="space-y-4">
-                                     <div><Label>Full Name</Label><Input value={pName} onChange={e => setPName(e.target.value)} /></div>
-                                     <div><Label>Phone Number</Label><Input value={pPhone} onChange={e => setPPhone(e.target.value)} /></div>
-                                     <div><Label>Home Address</Label><Input value={pAddress} onChange={e => setPAddress(e.target.value)} /></div>
-                                     <div className="pt-4"><Button type="submit" isLoading={isSubmittingProfile} className="w-full bg-rose-600 hover:bg-rose-700">Save Changes</Button></div>
+                             <Card className="bg-black border border-white/10 p-8">
+                                <div className="mb-8 pb-6 border-b border-white/10">
+                                    <h3 className="text-2xl font-bold text-white">My Profile</h3>
+                                    <p className="text-white/50 text-sm mt-1">Manage your account settings</p>
+                                </div>
+                                <form onSubmit={handleProfileUpdate} className="space-y-6">
+                                     <div>
+                                         <Label className="text-white/70 text-sm font-medium mb-2 block">Full Name</Label>
+                                         <Input value={pName} onChange={e => setPName(e.target.value)} className="bg-white/5 border-white/20 text-white placeholder:text-white/30 h-12 rounded-xl focus:border-white/40" placeholder="Enter your name" />
+                                     </div>
+                                     <div>
+                                         <Label className="text-white/70 text-sm font-medium mb-2 block">Phone Number</Label>
+                                         <Input value={pPhone} onChange={e => setPPhone(e.target.value)} className="bg-white/5 border-white/20 text-white placeholder:text-white/30 h-12 rounded-xl focus:border-white/40" placeholder="+91 XXXXX XXXXX" />
+                                     </div>
+                                     <div>
+                                         <Label className="text-white/70 text-sm font-medium mb-2 block">Home Address</Label>
+                                         <Input value={pAddress} onChange={e => setPAddress(e.target.value)} className="bg-white/5 border-white/20 text-white placeholder:text-white/30 h-12 rounded-xl focus:border-white/40" placeholder="Enter your address" />
+                                     </div>
+                                     <div className="pt-4"><Button type="submit" isLoading={isSubmittingProfile} className="w-full h-12 bg-white text-black hover:bg-white/90 font-bold text-base rounded-xl">Save Changes</Button></div>
                                 </form>
                              </Card>
                          </div>
@@ -1031,34 +1046,34 @@ export default function UserDashboard() {
             <AnimatePresence>
                 {showCartDrawer && (
                     <>
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCartDrawer(false)} className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40" />
-                        <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
-                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                                <h3 className="font-bold text-lg flex items-center gap-2"><ShoppingCart size={20} /> Your Cart</h3>
-                                <button onClick={() => setShowCartDrawer(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500"><X size={20} /></button>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCartDrawer(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
+                        <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed top-0 right-0 h-full w-full max-w-md bg-black border-l border-white/10 shadow-2xl z-50 flex flex-col">
+                            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black">
+                                <h3 className="font-bold text-lg text-white flex items-center gap-2"><ShoppingCart size={20} /> Your Cart</h3>
+                                <button onClick={() => setShowCartDrawer(false)} className="p-2 hover:bg-white/10 rounded-full text-white/60"><X size={20} /></button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                                {cart.length === 0 ? <div className="text-center text-slate-400 mt-20"><ShoppingCart size={48} className="mx-auto mb-4 opacity-50"/>Cart is empty</div> : cart.map(item => (
-                                    <div key={item.id} className="flex gap-4 p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
-                                        <div className="w-16 h-16 bg-rose-50 rounded-lg flex items-center justify-center text-rose-600 font-bold">{item.type}</div>
+                                {cart.length === 0 ? <div className="text-center text-white/40 mt-20"><ShoppingCart size={48} className="mx-auto mb-4 opacity-50"/>Cart is empty</div> : cart.map(item => (
+                                    <div key={item.id} className="flex gap-4 p-4 bg-white/5 border border-white/10 rounded-xl shadow-sm">
+                                        <div className="w-16 h-16 bg-rose-500/20 rounded-lg flex items-center justify-center text-rose-500 font-bold">{item.type}</div>
                                         <div className="flex-1">
-                                            <div className="font-bold text-slate-800">{item.hospitalName}</div>
+                                            <div className="font-bold text-white">{item.hospitalName}</div>
                                             <div className="flex justify-between items-center mt-2">
-                                                <div className="flex items-center gap-3 bg-slate-100 rounded-lg p-1">
-                                                    <button onClick={() => updateCartQuantity(item.id, -1)} className="p-1 hover:bg-white rounded-md transition-colors"><Minus size={12}/></button>
-                                                    <div className="text-sm font-bold w-4 text-center">{item.quantity}</div>
-                                                    <button onClick={() => updateCartQuantity(item.id, 1)} className="p-1 hover:bg-white rounded-md transition-colors"><Plus size={12}/></button>
+                                                <div className="flex items-center gap-3 bg-white/10 rounded-lg p-1">
+                                                    <button onClick={() => updateCartQuantity(item.id, -1)} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white"><Minus size={12}/></button>
+                                                    <div className="text-sm font-bold w-4 text-center text-white">{item.quantity}</div>
+                                                    <button onClick={() => updateCartQuantity(item.id, 1)} className="p-1 hover:bg-white/10 rounded-md transition-colors text-white"><Plus size={12}/></button>
                                                 </div>
                                                 <button onClick={() => removeFromCart(item.id)} className="text-xs text-rose-500 hover:underline">Remove</button>
                                             </div>
                                         </div>
-                                        <div className="text-right font-bold text-slate-800">${item.price * item.quantity}</div>
+                                        <div className="text-right font-bold text-white">${item.price * item.quantity}</div>
                                     </div>
                                 ))}
                             </div>
-                            <div className="p-6 border-t border-slate-100 bg-slate-50">
-                                <div className="flex justify-between items-center mb-6"><span className="text-slate-500">Total Amount</span><span className="text-2xl font-bold text-slate-900">${cartTotal}</span></div>
-                                {orderSuccess ? <div className="w-full py-4 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center font-bold"><CheckCircle2 size={20} className="mr-2" /> Order Placed!</div> : <Button onClick={handleCheckout} isLoading={isProcessingPayment} disabled={cart.length === 0} className="w-full bg-slate-900 text-white py-4 text-lg">Checkout Now</Button>}
+                            <div className="p-6 border-t border-white/10 bg-black">
+                                <div className="flex justify-between items-center mb-6"><span className="text-white/60">Total Amount</span><span className="text-2xl font-bold text-white">${cartTotal}</span></div>
+                                {orderSuccess ? <div className="w-full py-4 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center font-bold"><CheckCircle2 size={20} className="mr-2" /> Order Placed!</div> : <Button onClick={handleCheckout} isLoading={isProcessingPayment} disabled={cart.length === 0} className="w-full bg-white text-black py-4 text-lg hover:bg-white/90">Checkout Now</Button>}
                             </div>
                         </motion.div>
                     </>
@@ -1073,7 +1088,7 @@ export default function UserDashboard() {
                         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden relative z-10">
                             <div className="p-8 bg-slate-900 text-white flex justify-between items-start">
                                 <div><h2 className="text-2xl font-bold mb-1">INVOICE</h2><p className="text-slate-400 text-sm">#{viewingOrder.id.slice(0, 8)}</p></div>
-                                <div className="text-right"><h3 className="font-bold text-xl">LifeLine</h3></div>
+                                <div className="text-right"><h3 className="font-bold text-xl">VAYRIN</h3></div>
                             </div>
                             <div className="p-8">
                                 <table className="w-full text-left mb-8">

@@ -285,7 +285,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.8, delay: 0.2 }}
                     className="text-lg md:text-xl text-slate-400 max-w-lg mb-10 leading-relaxed font-light"
                  >
-                    Orchestrating critical care logistics with AI-driven precision. When every second counts, <span className="text-white font-medium">LifeLine delivers</span> zero-latency coordination between hospitals, patients, and fleets.
+                    Orchestrating critical care logistics with AI-driven precision. When every second counts, <span className="text-white font-medium">VAYRIN delivers</span> zero-latency coordination between hospitals, patients, and fleets.
                  </motion.p>
                  
                  <motion.div 
@@ -459,7 +459,7 @@ export default function LandingPage() {
                         <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
                             <Activity className="text-black" size={20} />
                         </div>
-                        LifeLine<span className="text-white">.</span>
+                        VAYRIN<span className="text-white">.</span>
                   </div>
                   <p className="text-slate-500 max-w-sm mb-8">
                       Our mission is to reduce emergency response times by 50% using decentralized logistics and real-time data.
@@ -485,7 +485,7 @@ export default function LandingPage() {
               </div>
           </div>
           <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 text-center text-slate-600 text-sm">
-              © 2024 LifeLine Emergency Network. All rights reserved.
+              © 2024 VAYRIN. All rights reserved.
           </div>
       </footer>
 

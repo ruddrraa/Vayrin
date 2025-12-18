@@ -203,7 +203,7 @@ export const SignInModal: React.FC<SignInModalProps> = ({
         </form>
 
         <div className="mt-8 pt-6 border-t border-white/10 text-center text-sm text-slate-500">
-          New to LifeLine?{' '}
+          New to VAYRIN?{' '}
           <button
             type="button"
             onClick={onSwitchToSignUp}

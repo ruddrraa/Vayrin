@@ -226,7 +226,7 @@ export const SignUpModal: React.FC<SignUpModalProps> = ({
             {getRoleIcon()}
             {targetRole} PORTAL
           </div>
-          <h2 className="text-3xl font-bold text-white mb-2">Join LifeLine</h2>
+          <h2 className="text-3xl font-bold text-white mb-2">Join VAYRIN</h2>
           <p className="text-slate-500 text-sm">Create your account to get started.</p>
         </div>
 
