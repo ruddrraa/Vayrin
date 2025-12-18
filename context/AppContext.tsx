@@ -50,7 +50,7 @@ interface AppContextType {
 
   // Ride Hailing (Real-time)
   activeRide: RideRequest | null;
-  createRideRequest: (req: Omit<RideRequest, 'id' | 'createdAt' | 'status' | 'userId'>) => Promise<string | null>;
+  createRideRequest: (req: Omit<RideRequest, 'id' | 'createdAt' | 'status' | 'userId'> & { ambulanceId?: string }) => Promise<string | null>;
   acceptRideRequest: (rideId: string, driverId: string, ambulanceId: string) => Promise<void>;
   updateRideStatus: (rideId: string, status: RideStatus) => Promise<void>;
   cancelRide: (rideId: string) => Promise<void>;
@@ -121,10 +121,19 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     location: data.location || { lat: 28.6139, lng: 77.2090 },
     heading: data.location?.heading || 0,
     type: data.type,
-    baseCharge: data.base_charge,
-    pricePerKm: data.price_per_km,
+    baseCharge: Number(data.base_charge ?? 0),
+    pricePerKm: Number(data.price_per_km ?? 0),
     equipment: data.equipment || []
   });
+
+  const randomNearbyPoint = (lat: number, lng: number, minMeters: number, maxMeters: number) => {
+      // Generate a point between minMeters and maxMeters from the given location
+      const distance = minMeters + Math.random() * (maxMeters - minMeters);
+      const angle = Math.random() * 2 * Math.PI; // random direction
+      const latOffset = (distance * Math.cos(angle)) / 111320;
+      const lngOffset = (distance * Math.sin(angle)) / (111320 * Math.cos(lat * Math.PI / 180));
+      return { lat: lat + latOffset, lng: lng + lngOffset };
+  };
 
   const mapDriver = (data: any): Driver => ({
       id: data.id,
@@ -630,6 +639,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   const placeOrder = async (cartItems: CartItem[], total: number) => {
       if(!currentUser) return;
       
+      console.log('[placeOrder] Cart Items:', cartItems);
+      
       const ordersByHospital: Record<string, CartItem[]> = {};
       cartItems.forEach(item => {
           if(!ordersByHospital[item.hospitalId]) ordersByHospital[item.hospitalId] = [];
@@ -637,7 +648,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       });
 
       // 1. Create Order Records
-      const promises = Object.entries(ordersByHospital).map(([hospitalId, items]) => {
+      const orderPromises = Object.entries(ordersByHospital).map(([hospitalId, items]) => {
           const subTotal = items.reduce((acc, i) => acc + (i.price * i.quantity), 0);
           return supabase.from('orders').insert({
               user_id: currentUser.id,
@@ -648,28 +659,36 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
           }).select().single();
       });
 
-      // 2. Decrement Blood Stock
-      const stockUpdates = cartItems.map(async (item) => {
-          // Fetch current quantity first to avoid negative stock if possible (race condition possible but acceptable for MVP)
-          const { data: currentStock } = await supabase.from('blood_stock').select('units').eq('id', item.id).single();
+      // 2. Decrement Blood Stock in Supabase
+      const stockUpdatePromises = cartItems.map(async (item) => {
+          console.log('[placeOrder] Updating stock for item ID:', item.id, 'Quantity to deduct:', item.quantity);
+          // Fetch current quantity first to avoid negative stock
+          const { data: currentStock, error: fetchError } = await supabase.from('blood_stock').select('units').eq('id', item.id).single();
+          console.log('[placeOrder] Current stock from DB:', currentStock, 'Error:', fetchError);
           if (currentStock) {
-              const newUnits = Math.max(0, currentStock.units - item.quantity);
-              await supabase.from('blood_stock').update({ units: newUnits }).eq('id', item.id);
+              const newUnits = Math.max(0, Number(currentStock.units) - item.quantity);
+              console.log('[placeOrder] New units to set:', newUnits);
+              const { error: updateError } = await supabase.from('blood_stock').update({ units: newUnits }).eq('id', item.id);
+              console.log('[placeOrder] Update error:', updateError);
           }
       });
 
-      await Promise.all([...promises, ...stockUpdates]);
+      // Execute all operations in parallel
+      const [orderResults] = await Promise.all([
+          Promise.all(orderPromises),
+          Promise.all(stockUpdatePromises)
+      ]);
       
       // 3. Update Local State Instantly
       // Update Orders
-      const results = await Promise.all(promises);
-      const newOrders = results.map(r => r.data ? mapOrder(r.data) : null).filter(Boolean) as Order[];
+      const newOrders = orderResults.map(r => r.data ? mapOrder(r.data) : null).filter(Boolean) as Order[];
       setOrders(prev => [...newOrders, ...prev]);
 
-      // Update Blood Stock
+      // Update Blood Stock locally (reflects the deduction instantly in UI)
       setBloodStock(prev => prev.map(stock => {
           const cartItem = cartItems.find(c => c.id === stock.id);
           if (cartItem) {
+              console.log('[placeOrder] Updating local stock:', stock.id, 'from', stock.units, 'to', stock.units - cartItem.quantity);
               return { ...stock, units: Math.max(0, stock.units - cartItem.quantity) };
           }
           return stock;
@@ -678,55 +697,70 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       setCart([]);
   };
 
-  const createRideRequest = async (req: Omit<RideRequest, 'id' | 'createdAt' | 'status' | 'userId'>) => {
+    const createRideRequest = async (req: Omit<RideRequest, 'id' | 'createdAt' | 'status' | 'userId'> & { ambulanceId?: string }) => {
       if (!currentUser) return null;
-      
-      const { data: rideData, error } = await supabase.from('ride_requests').insert({
-          user_id: currentUser.id,
-          pickup_lat: req.pickupLat,
-          pickup_lng: req.pickupLng,
-          pickup_address: req.pickupAddress,
-          drop_lat: req.dropLat,
-          drop_lng: req.dropLng,
-          drop_address: req.dropAddress,
-          price: req.price,
-          distance: req.distance,
+
+        const { data: rideData, error } = await supabase.from('ride_requests').insert({
+        user_id: currentUser.id,
+        pickup_lat: req.pickupLat,
+        pickup_lng: req.pickupLng,
+        pickup_address: req.pickupAddress,
+        drop_lat: req.dropLat,
+        drop_lng: req.dropLng,
+        drop_address: req.dropAddress,
+        price: req.price,
+        distance: req.distance,
+        duration: req.duration,
+        ambulance_id: req.ambulanceId || null,
           status: 'searching'
       }).select().single();
 
       if (error) {
-          console.error("Ride creation failed:", error);
-          return null;
+        console.error("Ride creation failed:", error);
+        return null;
       }
       
       let ride = mapRide(rideData);
       setActiveRide(ride);
 
-      // Auto-dispatch logic
-      const { data: availableAmbulance } = await supabase
-          .from('ambulances')
-          .select('*')
-          .eq('status', 'AVAILABLE')
+      // Auto-dispatch logic (pick chosen ambulance first)
+        const targetAmbulanceId = req.ambulanceId;
+        const { data: availableAmbulance } = targetAmbulanceId
+          ? await supabase.from('ambulances').select('*').eq('id', targetAmbulanceId).single()
+          : await supabase
+            .from('ambulances')
+            .select('*')
+            .eq('status', 'AVAILABLE')
+            .limit(1)
+            .single();
+
+      if (availableAmbulance) {
+        const { data: driver } = await supabase
+          .from('drivers')
+          .select('id')
+          .eq('hospital_id', availableAmbulance.hospital_id)
+          .eq('status', 'ACTIVE')
           .limit(1)
           .single();
 
-      if (availableAmbulance) {
-          const { data: driver } = await supabase.from('drivers').select('id').eq('hospital_id', availableAmbulance.hospital_id).eq('status', 'ACTIVE').limit(1).single();
-          const assignedDriverId = driver ? driver.id : availableAmbulance.hospital_id;
+        const assignedDriverId = driver ? driver.id : availableAmbulance.hospital_id;
 
-          await supabase.from('ride_requests').update({
-              status: 'accepted',
-              ambulance_id: availableAmbulance.id,
-              driver_id: assignedDriverId
-          }).eq('id', ride.id);
+        // Use ambulance's existing location from DB (no random seeding)
+        // The ambulance location should already be set in Supabase
 
-          await supabase.from('ambulances').update({ status: 'BUSY' }).eq('id', availableAmbulance.id);
+        await supabase.from('ride_requests').update({
+          status: 'accepted',
+          ambulance_id: availableAmbulance.id,
+          driver_id: assignedDriverId
+        }).eq('id', ride.id);
 
-          ride = { ...ride, status: 'accepted', ambulanceId: availableAmbulance.id, driverId: assignedDriverId };
-          setActiveRide(ride);
+        await supabase.from('ambulances').update({ status: 'BUSY' }).eq('id', availableAmbulance.id);
+
+        ride = { ...ride, status: 'accepted', ambulanceId: availableAmbulance.id, driverId: assignedDriverId };
+        setActiveRide(ride);
       }
       return ride.id;
-  };
+    };
 
   const updateDriverLocation = async (ambulanceId: string, lat: number, lng: number, heading: number) => {
       await supabase.from('ambulances').update({ location: { lat, lng, heading } }).eq('id', ambulanceId);
@@ -741,7 +775,18 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   const updateRideStatus = async (rideId: string, status: RideStatus) => {
       const { error } = await supabase.from('ride_requests').update({ status }).eq('id', rideId);
       if (!error && (status === 'completed' || status === 'cancelled')) {
-          if (activeRide?.ambulanceId) await supabase.from('ambulances').update({ status: 'AVAILABLE' }).eq('id', activeRide.ambulanceId);
+          if (activeRide?.ambulanceId) {
+              await supabase.from('ambulances').update({ status: 'AVAILABLE' }).eq('id', activeRide.ambulanceId);
+              
+              // Update ambulance location to drop location after ride completes
+              if (status === 'completed' && activeRide) {
+                  await supabase.from('ambulances').update({ 
+                      location: { lat: activeRide.dropLat, lng: activeRide.dropLng } 
+                  }).eq('id', activeRide.ambulanceId);
+              }
+          }
+        // Reset local active ride so UI returns to request state
+        setActiveRide(null);
       }
       if (error) throw error;
   };

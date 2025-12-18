@@ -9,12 +9,15 @@ interface MapProps {
     lat: number;
     lng: number;
     type: 'USER' | 'AMBULANCE' | 'DESTINATION';
+    bearing?: number; // rotation angle for ambulance icon
   }>;
   route?: {
     start: { lat: number; lng: number };
     end: { lat: number; lng: number };
   } | null;
   onMapLoad?: () => void;
+  onRouteInfo?: (info: { distanceKm: number; durationMinutes: number } | null) => void;
+  onRouteCoords?: (coords: [number, number][] | null) => void; // Route polyline coordinates [lng, lat]
 }
 
 const OLAMAPS_API_KEY = import.meta.env.VITE_OLAMAPS_API_KEY;
@@ -31,7 +34,7 @@ const loadOlaMapsSdk = () => {
     return olaMapsPromise;
 };
 
-export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad }: MapProps) => {
+export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad, onRouteInfo, onRouteCoords }: MapProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const [isMapReady, setIsMapReady] = useState(false);
@@ -182,7 +185,9 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad
                         });
                     }
                 } catch (e) { /* ignore */ }
-                setRouteInfo(null);
+                    setRouteInfo(null);
+                    if (onRouteInfo) onRouteInfo(null);
+                    if (onRouteCoords) onRouteCoords(null);
                 return;
             }
             
@@ -202,15 +207,27 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad
                 const best = routes[0];
                 console.log('Route received:', best);
                 
-                setRouteInfo({ 
-                    distance_meters: best.distance_meters, 
-                    duration_seconds: best.duration_seconds 
-                });
+                    const metrics = { 
+                        distance_meters: best.distance_meters, 
+                        duration_seconds: best.duration_seconds 
+                    };
+                    setRouteInfo(metrics);
+                    if (onRouteInfo) {
+                        onRouteInfo({
+                            distanceKm: Number((metrics.distance_meters / 1000).toFixed(2)),
+                            durationMinutes: Math.max(1, Math.round(metrics.duration_seconds / 60))
+                        });
+                    }
                 
                 // Parse and draw geometry
                 const lineGeometry = normalizeGeometry(best.geometry);
                 
                 if (lineGeometry && lineGeometry.coordinates.length > 0) {
+                    // Pass route coordinates to parent for ambulance animation
+                    if (onRouteCoords) {
+                        onRouteCoords(lineGeometry.coordinates);
+                    }
+                    
                     const geojsonData = {
                         type: 'Feature' as const,
                         properties: {},
@@ -277,7 +294,7 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad
         };
         
         draw();
-    }, [route, isMapReady]);
+    }, [route, isMapReady, onRouteInfo, onRouteCoords]);
 
     // 2. Sync Center
     useEffect(() => {
@@ -335,29 +352,117 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad
             } catch (e) { /* layer may already exist */ }
         }
         
-        // Main marker circles
+        // Main marker circles (non-ambulance)
         if (map.addLayer && !map.getLayer?.('markers-circle')) {
             try {
                 map.addLayer({
                     id: 'markers-circle',
                     type: 'circle',
                     source: 'markers-source',
+                    filter: ['!=', ['get', 'type'], 'AMBULANCE'], // Exclude ambulance from circle markers
                     paint: {
-                        'circle-radius': 10,
+                        'circle-radius': [
+                            'match',
+                            ['get', 'type'],
+                            'DESTINATION', 12,
+                            'USER', 11,
+                            10
+                        ],
                         'circle-color': [
                             'match',
                             ['get', 'type'],
                             'USER', '#3b82f6',
-                            'AMBULANCE', '#f97316',
                             'DESTINATION', '#ef4444',
                             '#6b7280',
                         ],
                         'circle-stroke-color': '#ffffff',
-                        'circle-stroke-width': 3,
+                        'circle-stroke-width': [
+                            'match',
+                            ['get', 'type'],
+                            'DESTINATION', 4,
+                            'USER', 3,
+                            3
+                        ],
                     },
                 });
             } catch (e) { /* layer may already exist */ }
         }
+        
+        // Ambulance marker with custom icon
+        // First, load ambulance icon image if not already loaded
+        const loadAmbulanceIcon = async () => {
+            if (!map.hasImage?.('ambulance-icon')) {
+                try {
+                    // Create ambulance icon as canvas
+                    const size = 48;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        // Draw ambulance icon (orange car-like shape)
+                        ctx.fillStyle = '#f97316'; // Orange
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 2;
+                        
+                        // Main body (rounded rectangle)
+                        ctx.beginPath();
+                        ctx.roundRect(8, 12, 32, 24, 6);
+                        ctx.fill();
+                        ctx.stroke();
+                        
+                        // Front cabin
+                        ctx.fillStyle = '#ea580c';
+                        ctx.beginPath();
+                        ctx.roundRect(28, 16, 10, 16, 4);
+                        ctx.fill();
+                        
+                        // Cross symbol (medical)
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(18, 20, 8, 3);
+                        ctx.fillRect(20.5, 17, 3, 9);
+                        
+                        // Direction indicator (arrow at top)
+                        ctx.fillStyle = '#1e293b';
+                        ctx.beginPath();
+                        ctx.moveTo(24, 4);
+                        ctx.lineTo(30, 12);
+                        ctx.lineTo(18, 12);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    
+                    const imageData = ctx?.getImageData(0, 0, size, size);
+                    if (imageData && map.addImage) {
+                        map.addImage('ambulance-icon', { width: size, height: size, data: imageData.data });
+                    }
+                } catch (e) {
+                    console.warn('Failed to create ambulance icon:', e);
+                }
+            }
+            
+            // Add ambulance symbol layer
+            if (map.addLayer && !map.getLayer?.('ambulance-symbol')) {
+                try {
+                    map.addLayer({
+                        id: 'ambulance-symbol',
+                        type: 'symbol',
+                        source: 'markers-source',
+                        filter: ['==', ['get', 'type'], 'AMBULANCE'],
+                        layout: {
+                            'icon-image': 'ambulance-icon',
+                            'icon-size': 0.8,
+                            'icon-rotate': ['coalesce', ['get', 'bearing'], 0],
+                            'icon-rotation-alignment': 'map',
+                            'icon-allow-overlap': true,
+                            'icon-ignore-placement': true,
+                        },
+                    });
+                } catch (e) { /* layer may already exist */ }
+            }
+        };
+        
+        loadAmbulanceIcon();
     }, [markers, isMapReady]);
 
   return (

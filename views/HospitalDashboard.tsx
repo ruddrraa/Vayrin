@@ -356,9 +356,9 @@ export default function HospitalDashboard() {
                                              <div key={idx} className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-xl">
                                                  <div className="flex items-center gap-3">
                                                       <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">{item.type}</div>
-                                                      <span className="font-medium text-slate-700">{item.units} Unit(s) Blood</span>
+                                                      <span className="font-medium text-slate-700">{item.quantity} Unit(s) Blood</span>
                                                  </div>
-                                                 <div className="text-slate-500">x{item.quantity}</div>
+                                                 <div className="text-slate-500">@ ${item.price}/unit</div>
                                                  <div className="font-bold text-slate-800">${item.price * item.quantity}</div>
                                              </div>
                                          ))}

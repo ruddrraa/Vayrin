@@ -73,14 +73,14 @@ const Navbar = ({ onOpenAuth }: { onOpenAuth: () => void }) => {
         <motion.nav 
             initial={{ y: -100 }}
             animate={{ y: 0 }}
-            className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 border-b ${scrolled ? 'bg-[#020617]/80 backdrop-blur-md border-white/5 py-4' : 'bg-transparent border-transparent py-6'}`}
+            className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 border-b ${scrolled ? 'bg-black/90 backdrop-blur-md border-white/10 py-4' : 'bg-transparent border-transparent py-6'}`}
         >
             <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
                 <div className="flex items-center gap-2 font-bold text-2xl tracking-tighter text-white">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <Activity className="text-white" size={20} />
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                        <Activity className="text-black" size={20} />
                     </div>
-                    LifeLine<span className="text-blue-500">.</span>
+                    VAYRIN<span className="text-white">.</span>
                 </div>
 
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
@@ -91,7 +91,7 @@ const Navbar = ({ onOpenAuth }: { onOpenAuth: () => void }) => {
 
                 <button 
                     onClick={onOpenAuth}
-                    className="px-6 py-2.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-blue-50 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                    className="px-6 py-2.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-gray-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                 >
                     Get Started
                 </button>
@@ -106,11 +106,11 @@ const SectionHeader = ({ badge, title, subtitle }: { badge: string, title: React
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-blue-400 mb-6 backdrop-blur-md"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-white mb-6 backdrop-blur-md"
         >
             <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
             </span>
             {badge}
         </motion.div>
@@ -143,7 +143,7 @@ const FeatureCard = ({ icon: Icon, title, desc, colSpan = 1, delay = 0, image }:
         transition={{ delay, duration: 0.5 }}
         className={`group relative overflow-hidden rounded-3xl bg-white/[0.03] border border-white/10 hover:border-white/20 transition-colors p-8 flex flex-col ${colSpan === 2 ? 'md:col-span-2' : 'md:col-span-1'}`}
     >
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         
         {/* Abstract Image Background for larger cards */}
         {image && (
@@ -153,7 +153,7 @@ const FeatureCard = ({ icon: Icon, title, desc, colSpan = 1, delay = 0, image }:
         )}
 
         <div className="relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-blue-400 mb-6 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-lg shadow-black/20">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white mb-6 group-hover:bg-white group-hover:text-black transition-all duration-300 shadow-lg shadow-black/20">
                 <Icon size={24} />
             </div>
             <h3 className="text-xl font-bold text-white mb-3">{title}</h3>
@@ -164,9 +164,9 @@ const FeatureCard = ({ icon: Icon, title, desc, colSpan = 1, delay = 0, image }:
 
 const RolePortal = ({ role, title, desc, icon: Icon, color, onClick, delay }: any) => {
     const colors: any = {
-        blue: 'from-blue-500/20 hover:border-blue-500/50 text-blue-400',
-        rose: 'from-rose-500/20 hover:border-rose-500/50 text-rose-400',
-        amber: 'from-amber-500/20 hover:border-amber-500/50 text-amber-400'
+        blue: 'from-white/10 hover:border-white/50 text-white',
+        rose: 'from-white/10 hover:border-white/50 text-white',
+        amber: 'from-white/10 hover:border-white/50 text-white'
     };
 
     return (
@@ -176,7 +176,7 @@ const RolePortal = ({ role, title, desc, icon: Icon, color, onClick, delay }: an
             viewport={{ once: true }}
             transition={{ delay }}
             onClick={onClick}
-            className={`group cursor-pointer relative h-[400px] rounded-[2rem] bg-[#0A0A0A] border border-white/10 p-8 flex flex-col justify-between overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${colors[color].replace('text-', 'hover:shadow-')}/20`}
+            className={`group cursor-pointer relative h-[400px] rounded-[2rem] bg-black border border-white/10 p-8 flex flex-col justify-between overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-white/10 hover:-translate-y-2`}
         >
             <div className={`absolute inset-0 bg-gradient-to-b ${colors[color].split(' ')[0]} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
             
@@ -235,15 +235,15 @@ export default function LandingPage() {
   const opacityHero = useTransform(scrollY, [0, 400], [1, 0]);
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white selection:bg-blue-500/30 selection:text-blue-100 overflow-x-hidden">
+    <div className="min-h-screen bg-black text-white selection:bg-white/30 selection:text-white overflow-x-hidden">
       
       <Navbar onOpenAuth={() => document.getElementById('roles')?.scrollIntoView({ behavior: 'smooth' })} />
 
       {/* --- Global Noise & Gradient Background --- */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] w-[40%] h-[40%] bg-purple-600/10 rounded-full blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-white/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[10%] right-[-5%] w-[40%] h-[40%] bg-white/5 rounded-full blur-[120px]" />
       </div>
 
       {/* --- HERO SECTION --- */}
@@ -254,9 +254,9 @@ export default function LandingPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-sm font-semibold mb-8"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-white/10 text-white text-sm font-semibold mb-8"
                  >
-                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"/> v2.0 Live Network
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse"/> v2.0 Live Network
                  </motion.div>
                  
                  <motion.h1 
@@ -267,8 +267,8 @@ export default function LandingPage() {
                  >
                     Emergency <br/>
                     {/* Gradient Typewriter Text */}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-rose-400 animate-gradient">
-                        <Typewriter text="Response" delay={800} cursorColor="bg-rose-400" onComplete={() => setShowReimagined(true)} />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-300 to-white animate-gradient">
+                        <Typewriter text="Response" delay={800} cursorColor="bg-white" onComplete={() => setShowReimagined(true)} />
                     </span> <br/>
                     
                     {/* Secondary Typewriter Text */}
@@ -296,11 +296,11 @@ export default function LandingPage() {
                  >
                     <button 
                         onClick={() => document.getElementById('roles')?.scrollIntoView({ behavior: 'smooth' })}
-                        className="h-[56px] px-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg transition-all shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:scale-105 flex items-center justify-center"
+                        className="h-[56px] px-8 rounded-full bg-white hover:bg-gray-200 text-black font-bold text-lg transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.5)] hover:scale-105 flex items-center justify-center"
                     >
                         Launch App
                     </button>
-                    <button className="h-[56px] px-8 rounded-full border border-white/10 hover:bg-white/5 text-white font-semibold text-lg transition-all flex items-center gap-3 group">
+                    <button className="h-[56px] px-8 rounded-full border border-white/20 hover:bg-white/10 text-white font-semibold text-lg transition-all flex items-center gap-3 group">
                         <Play size={18} className="fill-white group-hover:scale-110 transition-transform" /> Watch Demo
                     </button>
                  </motion.div>
@@ -314,7 +314,7 @@ export default function LandingPage() {
              >
                  {/* Abstract 3D Representation */}
                  <div className="relative w-full aspect-square">
-                     <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
+                     <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-white/5 rounded-full blur-3xl animate-pulse" />
                      <img 
                         src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop" 
                         alt="Network" 
@@ -325,7 +325,7 @@ export default function LandingPage() {
                      <motion.div 
                         animate={{ y: [0, -20, 0] }}
                         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute top-10 -right-10 z-20 bg-[#0F172A]/90 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl max-w-[200px]"
+                        className="absolute top-10 -right-10 z-20 bg-black/90 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl max-w-[200px]"
                      >
                          <div className="flex items-center gap-3 mb-2">
                              <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-500"><HeartPulse size={16}/></div>
@@ -337,7 +337,7 @@ export default function LandingPage() {
                      <motion.div 
                         animate={{ y: [0, 20, 0] }}
                         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                        className="absolute bottom-20 -left-10 z-20 bg-[#0F172A]/90 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl max-w-[220px]"
+                        className="absolute bottom-20 -left-10 z-20 bg-black/90 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl max-w-[220px]"
                      >
                          <div className="flex items-center gap-3 mb-2">
                              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500"><Truck size={16}/></div>
@@ -365,11 +365,11 @@ export default function LandingPage() {
       </section>
 
       {/* --- FEATURES BENTO GRID --- */}
-      <section id="features" className="relative z-10 py-32 px-6 bg-[#020617]">
+      <section id="features" className="relative z-10 py-32 px-6 bg-black">
           <div className="max-w-7xl mx-auto">
              <SectionHeader 
                 badge="Capabilities"
-                title={<>Everything you need to <br/> <span className="text-blue-500">save lives.</span></>}
+                title={<>Everything you need to <br/> <span className="text-white">save lives.</span></>}
                 subtitle="A comprehensive suite of tools designed for the high-stakes environment of emergency response. Fast, reliable, and intuitive."
              />
 
@@ -412,7 +412,7 @@ export default function LandingPage() {
       </section>
 
       {/* --- PORTALS (Auth) SECTION --- */}
-      <section id="roles" className="relative z-10 py-32 px-6 bg-[#030712]">
+      <section id="roles" className="relative z-10 py-32 px-6 bg-black">
          <div className="max-w-7xl mx-auto">
              <SectionHeader 
                 badge="Access Point"
@@ -452,14 +452,14 @@ export default function LandingPage() {
       </section>
 
       {/* --- MISSION / FOOTER --- */}
-      <footer id="mission" className="relative z-10 py-24 px-6 border-t border-white/5 bg-[#020617]">
+      <footer id="mission" className="relative z-10 py-24 px-6 border-t border-white/10 bg-black">
           <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
               <div>
                   <div className="flex items-center gap-2 font-bold text-2xl tracking-tighter text-white mb-6">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <Activity className="text-white" size={20} />
+                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                            <Activity className="text-black" size={20} />
                         </div>
-                        LifeLine<span className="text-blue-500">.</span>
+                        LifeLine<span className="text-white">.</span>
                   </div>
                   <p className="text-slate-500 max-w-sm mb-8">
                       Our mission is to reduce emergency response times by 50% using decentralized logistics and real-time data.
@@ -472,15 +472,15 @@ export default function LandingPage() {
               <div className="grid grid-cols-2 gap-8 text-sm text-slate-400">
                   <div className="space-y-4">
                       <h4 className="font-bold text-white">Platform</h4>
-                      <a href="#" className="block hover:text-blue-400">Solutions</a>
-                      <a href="#" className="block hover:text-blue-400">Integration</a>
-                      <a href="#" className="block hover:text-blue-400">Pricing</a>
+                      <a href="#" className="block hover:text-white">Solutions</a>
+                      <a href="#" className="block hover:text-white">Integration</a>
+                      <a href="#" className="block hover:text-white">Pricing</a>
                   </div>
                   <div className="space-y-4">
                       <h4 className="font-bold text-white">Company</h4>
-                      <a href="#" className="block hover:text-blue-400">About Us</a>
-                      <a href="#" className="block hover:text-blue-400">Careers</a>
-                      <a href="#" className="block hover:text-blue-400">Contact</a>
+                      <a href="#" className="block hover:text-white">About Us</a>
+                      <a href="#" className="block hover:text-white">Careers</a>
+                      <a href="#" className="block hover:text-white">Contact</a>
                   </div>
               </div>
           </div>
