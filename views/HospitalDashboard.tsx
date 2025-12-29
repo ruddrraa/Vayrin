@@ -239,8 +239,8 @@ export default function HospitalDashboard() {
                         <AmbulanceIcon size={24} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-800">{amb.plateNumber}</h3>
-                        <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-medium">{amb.type}</span>
+                        <h3 className="font-bold text-white/60">{amb.plateNumber}</h3>
+                        <span className="text-xs text-white px-2 py-0.5 rounded font-medium">{amb.type}</span>
                       </div>
                     </div>
                     <select 
@@ -253,10 +253,10 @@ export default function HospitalDashboard() {
                       <option value="MAINTENANCE">MAINTENANCE</option>
                     </select>
                   </div>
-                  <div className="space-y-2 text-sm text-slate-500 mb-6 bg-slate-50/50 p-3 rounded-xl">
-                    <div className="flex justify-between"><span>Driver</span><span className="font-medium text-slate-700">{amb.driverName}</span></div>
-                    <div className="flex justify-between"><span>Base Rate</span><span className="font-medium text-slate-700">${amb.baseCharge}</span></div>
-                    <div className="flex justify-between"><span>Per Km</span><span className="font-medium text-slate-700">${amb.pricePerKm}/km</span></div>
+                  <div className="space-y-2 text-sm text-white mb-6 bg-black p-3 rounded-xl cursor-pointer">
+                    <div className="flex justify-between"><span>Driver</span><span className="font-medium text-white/60">{amb.driverName}</span></div>
+                    <div className="flex justify-between"><span>Base Rate</span><span className="font-medium text-white/60">${amb.baseCharge}</span></div>
+                    <div className="flex justify-between"><span>Per Km</span><span className="font-medium text-white/60">${amb.pricePerKm}/km</span></div>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="secondary" onClick={() => openEditModal(amb, 'FLEET')} className="flex-1 text-xs py-2 h-8"><Edit2 size={14} className="mr-1"/> Edit</Button>
@@ -276,17 +276,17 @@ export default function HospitalDashboard() {
                                 {drv.name.charAt(0)}
                             </div>
                             <div>
-                                <h3 className="font-bold text-slate-800">{drv.name}</h3>
+                                <h3 className="font-bold text-white">{drv.name}</h3>
                                 <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 rounded-full ${drv.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                                    <span className="text-xs text-slate-500">{drv.status}</span>
+                                    <span className="text-xs text-white/60">{drv.status}</span>
                                 </div>
                             </div>
                         </div>
-                        <div className="space-y-2 text-sm text-slate-500 mb-4 bg-slate-50 p-3 rounded-xl">
-                            <div className="flex justify-between"><span>License</span> <span className="text-slate-700 font-mono">{drv.licenseNumber}</span></div>
-                            <div className="flex justify-between"><span>Wage</span> <span className="text-slate-700">${drv.hourlyWage}/hr</span></div>
-                            <div className="flex justify-between"><span>Hours</span> <span className="text-slate-700">{drv.totalHours} hrs</span></div>
+                        <div className="space-y-2 text-sm text-white mb-4 bg-black p-3 rounded-xl">
+                            <div className="flex justify-between"><span>License</span> <span className="text-white/60 font-mono">{drv.licenseNumber}</span></div>
+                            <div className="flex justify-between"><span>Wage</span> <span className="text-white/60">${drv.hourlyWage}/hr</span></div>
+                            <div className="flex justify-between"><span>Hours</span> <span className="text-white/60">{drv.totalHours} hrs</span></div>
                         </div>
                          <div className="flex gap-2">
                             <Button variant="secondary" onClick={() => openEditModal(drv, 'DRIVERS')} className="flex-1 text-xs py-2 h-8"><Edit2 size={14} className="mr-1"/> Edit</Button>
@@ -300,15 +300,15 @@ export default function HospitalDashboard() {
           {activeTab === 'BLOOD' && (
             <motion.div key="blood" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="overflow-hidden rounded-3xl border border-slate-200 bg-white/70 backdrop-blur-xl shadow-sm">
               <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-bold tracking-wider">
+                <thead className="bg-black/90 text-white/60 text-xs uppercase font-bold tracking-wider">
                   <tr><th className="p-6">Type</th><th className="p-6">Stock</th><th className="p-6">Price</th><th className="p-6">Market Visibility</th><th className="p-6 text-right">Actions</th></tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-white/10 ">
                   {myBloodStock.map((stock) => (
-                    <tr key={stock.id} className={`hover:bg-blue-50/30 transition-colors ${stock.isPaused ? 'opacity-60 bg-slate-50' : ''}`}>
+                    <tr key={stock.id} className={`hoverblood bg-black ${stock.isPaused ? 'opacity-60 bg-slate-50' : ''}`}>
                       <td className="p-6"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-bold text-xs">{stock.type}</div></div></td>
-                      <td className="p-6 font-medium text-slate-700">{stock.units} units</td>
-                      <td className="p-6 text-slate-600">${stock.price}</td>
+                      <td className="p-6 font-medium text-slate-white">{stock.units} units</td>
+                      <td className="p-6 text-white">₹{stock.price}</td>
                       <td className="p-6">
                         <button 
                             onClick={() => updateBloodStock(stock.id, { isPaused: !stock.isPaused })}
@@ -346,19 +346,19 @@ export default function HospitalDashboard() {
                                      
                                      <div className="space-y-2">
                                          {order.items.map((item, idx) => (
-                                             <div key={idx} className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-xl">
+                                             <div key={idx} className="flex justify-between items-center text-sm p-3 bg-white/[0.03] rounded-xl">
                                                  <div className="flex items-center gap-3">
                                                       <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">{item.type}</div>
-                                                      <span className="font-medium text-slate-700">{item.quantity} Unit(s) Blood</span>
+                                                      <span className="font-medium unitsblood ">{item.quantity} Unit(s) Blood</span>
                                                  </div>
-                                                 <div className="text-slate-500">@ ${item.price}/unit</div>
-                                                 <div className="font-bold text-slate-800">${item.price * item.quantity}</div>
+                                                 <div className="unitsblood">@ ₹{item.price}/unit</div>
+                                                 <div className="font-bold unitsblood">₹{item.price * item.quantity}</div>
                                              </div>
                                          ))}
                                      </div>
                                      <div className="mt-4 text-right">
-                                         <span className="text-slate-500 text-sm mr-2">Total Value:</span>
-                                         <span className="text-xl font-bold text-slate-900">${order.totalAmount}</span>
+                                         <span className="text-white/60 text-sm mr-2">Total Value:</span>
+                                         <span className="text-xl font-bold text-white">₹{order.totalAmount}</span>
                                      </div>
                                  </div>
                                  
@@ -437,13 +437,13 @@ export default function HospitalDashboard() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm" />
              <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-slate-800">{editingId ? 'Edit Record' : 'Add New Record'}</h3>
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-black">
+                    <h3 className="text-xl font-bold text-white">{editingId ? 'Edit Record' : 'Add New Record'}</h3>
                     <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 addamb">
                     {activeTab === 'FLEET' && (
-                        <div className="space-y-4">
+                        <div className="space-y-4 ">
                              <div className="grid grid-cols-2 gap-4">
                                 <div><Label>Plate Number</Label><Input value={plate} onChange={e => setPlate(e.target.value)} required /></div>
                                 <div><Label>Type</Label><Select value={ambType} onChange={e => setAmbType(e.target.value as any)}><option value="BASIC">Basic</option><option value="ADVANCED">Advanced</option><option value="ICU">ICU</option></Select></div>
@@ -479,7 +479,7 @@ export default function HospitalDashboard() {
                     )}
                     <div className="pt-4 flex gap-3">
                         <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} className="flex-1">Cancel</Button>
-                        <Button type="submit" isLoading={isSubmitting} className="flex-1 bg-slate-900 text-white">{editingId ? 'Update' : 'Save'}</Button>
+                        <Button type="submit" isLoading={isSubmitting} className="flex-1">{editingId ? 'Update' : 'Save'}</Button>
                     </div>
                 </form>
              </motion.div>

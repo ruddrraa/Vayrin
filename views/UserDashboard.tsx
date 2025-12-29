@@ -822,7 +822,7 @@ export default function UserDashboard() {
                                         )}
                                         <Button 
                                             onClick={handleBookRide} 
-                                            className={`w-full h-14 text-lg rounded-2xl mt-auto md:mt-4 font-bold transition-all ${
+                                            className={`w-full h-14 text-lg rounded-2xl mt-auto md:mt-4 font-bold transition-all crossleg ${
                                                 pickupCoords && dropCoords && selectedAmbulanceId
                                                     ? 'bg-black text-white hover:bg-slate-800 shadow-lg shadow-black/20' 
                                                     : 'bg-slate-100 text-slate-400 cursor-not-allowed'
@@ -919,7 +919,7 @@ export default function UserDashboard() {
                 {/* --- SHOP TAB --- */}
                 {activeTab === 'SHOP' && (
                     <motion.div key="shop" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-black">
-                        <header className="flex flex-col md:flex-row justify-between items-center mb-8 sticky top-0 bg-black/80 backdrop-blur-md py-4 z-20 gap-4">
+                        <header className="flex flex-col md:flex-row justify-between items-center mb-8 sticky headtop bg-black/80 backdrop-blur-md py-4 z-20 gap-4">
                             <div><h2 className="text-3xl font-bold text-white">Blood Marketplace</h2><p className="text-white/60">Verified inventory from registered hospitals.</p></div>
                             <div className="flex items-center gap-4 w-full md:w-auto">
                                 <div className="relative flex-1 md:w-64">
@@ -927,22 +927,30 @@ export default function UserDashboard() {
                                     <input className="w-full pl-10 pr-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-rose-500/30" placeholder="Search blood type..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                                 </div>
                                 <div className="relative">
-                                    <Button className="pl-4 pr-6 bg-rose-600 hover:bg-rose-700 shadow-rose-500/30 text-white" onClick={() => setShowCartDrawer(true)}>
+                                    <Button className="pl-4 pr-6 bg-rose hover:bg-rose  text-black" onClick={() => setShowCartDrawer(true)}>
                                         <ShoppingCart size={20} className="mr-2" /> Cart
                                     </Button>
-                                    {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-white text-rose-600 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-black shadow-sm">{cart.reduce((acc, item) => acc + item.quantity, 0)}</span>}
+                                    {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-black shadow-sm">{cart.reduce((acc, item) => acc + item.quantity, 0)}</span>}
                                 </div>
                             </div>
                         </header>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
                             {availableBloodStock.length > 0 ? (
                                 availableBloodStock.map((item) => (
-                                    <Card key={item.id} className="group hover:shadow-xl hover:shadow-rose-500/10 transition-all duration-300 border border-white/10 bg-black">
+                                    <Card key={item.id} className="group border border-white/10 bg-black hover:border-rose-500/30">
                                         <div className="flex justify-between items-start mb-6">
-                                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500/30 to-rose-600/40 text-rose-400 flex items-center justify-center font-black text-2xl shadow-inner group-hover:scale-110 transition-transform border border-rose-500/20">{item.type}</div>
+                                            <div className="w-16 h-16 rounded-2xl bg-rose-500 text-white flex items-center justify-center font-black text-2xl border border-rose-500/20">{item.type}</div>
                                             <div className="text-right">
                                                 <div className="text-xl font-bold text-white">${item.price}</div>
-                                                <button onClick={() => toggleWishlist(item.id)} className={`mt-1 p-1 rounded-full transition-colors ${wishlist.includes(item.id) ? 'text-rose-500 bg-rose-500/20' : 'text-white/30 hover:bg-white/10'}`}><Heart size={16} fill={wishlist.includes(item.id) ? "currentColor" : "none"} /></button>
+                                                <button
+                                                    onClick={() => toggleWishlist(item.id)}
+                                                    className={`mt-1 p-1 rounded-full transition-colors ${wishlist.includes(item.id)
+                                                        ? 'text-rose-500 bg-rose-500/20'
+                                                        : 'text-white/30 hover:bg-rose-500/15 hover:text-rose-400'
+                                                    }`}
+                                                >
+                                                    <Heart size={16} fill={wishlist.includes(item.id) ? "currentColor" : "none"} />
+                                                </button>
                                             </div>
                                         </div>
                                         <div className="space-y-2 mb-6 border-b border-white/10 pb-4">
@@ -950,7 +958,9 @@ export default function UserDashboard() {
                                             <div className="flex justify-between text-xs text-white/50"><span>Expires:</span><span className="font-medium text-white/70">{item.expiryDate}</span></div>
                                             <div className="flex justify-between text-xs"><span className="text-white/50">Availability:</span><span className="text-emerald-400 font-bold">{item.units} Units</span></div>
                                         </div>
-                                        <Button variant="secondary" className="w-full bg-white text-black border-white hover:bg-white/90 transition-colors font-semibold" onClick={() => addToCart(item)}>Add to Cart <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" /></Button>
+                                        <Button variant="secondary" className="w-full bg-black text-white border-white hover:bg-white font-semibold" onClick={() => addToCart(item)}>
+                                            Add to Cart <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                                        </Button>
                                     </Card>
                                 ))
                             ) : (
@@ -969,7 +979,7 @@ export default function UserDashboard() {
                                 wishlistItems.map((item) => (
                                     <Card key={item.id} className="border border-white/10 bg-black hover:border-rose-500/30">
                                         <div className="flex justify-between items-start mb-4">
-                                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-rose-500/30 to-rose-600/40 text-rose-400 flex items-center justify-center font-black text-xl border border-rose-500/20">{item.type}</div>
+                                            <div className="w-14 h-14 rounded-xl bg-rose-500/20 text-rose-500 flex items-center justify-center font-black text-xl border border-rose-500/20">{item.type}</div>
                                             <button onClick={() => toggleWishlist(item.id)} className="text-rose-500 hover:bg-rose-500/20 p-2 rounded-full"><Heart fill="currentColor"/></button>
                                         </div>
                                         <div className="text-sm font-bold text-white mb-1">{item.hospitalName}</div>
@@ -1001,7 +1011,7 @@ export default function UserDashboard() {
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <span className={`px-4 py-1.5 rounded-full text-xs font-bold ${order.status === 'DELIVERED' ? 'bg-emerald-500 text-white' : order.status === 'DISPATCHED' ? 'bg-blue-500 text-white' : 'bg-amber-500 text-black'}`}>{order.status}</span>
-                                            <Button variant="secondary" className="h-9 px-4 bg-white text-black border-white hover:bg-white/90 font-semibold text-xs" onClick={() => setViewingOrder(order)}><FileText size={14} className="mr-1.5" /> Invoice</Button>
+                                            <Button variant="secondary" className="h-9 px-4 bg-white text-black border-white  font-semibold text-xs" onClick={() => setViewingOrder(order)}><FileText size={14} className="mr-1.5" /> Invoice</Button>
                                         </div>
                                     </Card>
                                 ))
@@ -1093,7 +1103,7 @@ export default function UserDashboard() {
                             <div className="p-8">
                                 <table className="w-full text-left mb-8">
                                     <thead className="bg-slate-50 text-slate-500 text-xs font-bold uppercase"><tr><th className="py-3 px-4">Item</th><th className="py-3 px-4">Hospital</th><th className="py-3 px-4 text-center">Qty</th><th className="py-3 px-4 text-right">Amount</th></tr></thead>
-                                    <tbody className="text-sm divide-y divide-slate-100">{viewingOrder.items.map((item, i) => (<tr key={i}><td className="py-3 px-4 font-bold">{item.type} Blood</td><td className="py-3 px-4">{item.hospitalName}</td><td className="py-3 px-4 text-center">{item.quantity}</td><td className="py-3 px-4 text-right">${item.price * item.quantity}</td></tr>))}</tbody>
+                                    <tbody className="text-sm divide-y divide-slate-100 text-black">{viewingOrder.items.map((item, i) => (<tr key={i}><td className="py-3 px-4 font-bold">{item.type} Blood</td><td className="py-3 px-4">{item.hospitalName}</td><td className="py-3 px-4 text-center">{item.quantity}</td><td className="py-3 px-4 text-right">${item.price * item.quantity}</td></tr>))}</tbody>
                                 </table>
                                 <div className="flex justify-end border-t border-slate-200 pt-6"><div className="text-right"><p className="text-slate-500 mb-1">Total</p><p className="text-3xl font-bold text-slate-900">${viewingOrder.totalAmount}</p></div></div>
                             </div>
