@@ -1,0 +1,96 @@
+{   
+  "status": "success",   
+  "blood_bank_details": {   
+    "id": "bb_kol_001",   
+    "name": "Apollo Gleneagles Blood Center",   
+    "type": "PRIVATE",   
+    "license_number": "WB/BB/2024/89",   
+    "last_updated": "2026-01-03 T16:30:00Z"   
+  },   
+  "inventory_summary": [   
+    {   
+      "blood_group": "B_POSITIVE",   
+      "rh_factor": "+",   
+      "total_units_available": 24,   
+      "components": [   
+        {   
+          "type_code": "PRBC",   
+          "display_name": "Packed Red Blood Cells",   
+          "available_units": 15,   
+          "processing_charge": 1550,   
+          "currency": "INR",   
+          "is_govt_capped": true,   
+          "batches": [   
+            {   
+              "batch_id": "b_7890",   
+              "quantity": 10,   
+              "expiry_date": "2026-02-15 ",   
+              "status": "FRESH"   
+            },   
+            {   
+              "batch_id": "b_7891",   
+              "quantity": 5,   
+              "expiry_date": " 2026-01-10",   
+              "status": "NEAR_EXPIRY"   
+            }   
+          ]   
+        },   
+        {   
+          "type_code": "FFP",   
+          "display_name": "Fresh Frozen Plasma",   
+          "available_units": 9,   
+          "processing_charge": 400,   
+          "currency": "INR",   
+          "is_govt_capped": true,   
+          "batches": [   
+            {   
+              "batch_id": "f_1122",   
+              "quantity": 9,   
+              "expiry_date": "2026-12-01 ",   
+              "status": "STABLE"   
+            }   
+          ]   
+        }   
+      ]   
+    },   
+    {   
+      "blood_group": "B_NEGATIVE",   
+      "rh_factor": "-",   
+      "total_units_available": 3,   
+      "components": [   
+        {   
+          "type_code": "PRBC",   
+          "display_name": "Packed Red Blood Cells",   
+          "available_units": 1,   
+          "processing_charge": 1550,   
+          "currency": "INR",   
+          "is_govt_capped": true,   
+          "batches": [   
+             {   
+              "batch_id": "b_9901",   
+              "quantity": 1,   
+              "expiry_date": " 2026-01-20 ",  
+              "status": "CRITICAL_STOCK"   
+             }   
+          ]   
+        },   
+        {   
+          "type_code": "RDP",   
+          "display_name": "Random Donor Platelets",   
+          "available_units": 2,   
+          "processing_charge": 400,   
+          "currency": "INR",   
+          "is_govt_capped": true,   
+          "batches": [   
+            {   
+              "batch_id": "p_5543",   
+              "quantity": 2,   
+              "expiry_date": " 2026-01-05 ",  
+              "status": "URGENT_DISPOSAL"    
+            }   
+          ]   
+        }   
+      ]   
+    }   
+  ]   
+} 
