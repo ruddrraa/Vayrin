@@ -8,7 +8,7 @@ import { Navigation, Droplet, ShoppingCart, LogOut, ArrowRight, CheckCircle2, He
 import { Ambulance, AmbulanceStatus } from '../types';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import { rideService } from '../src/services/api';
-import { reverseGeocode } from '../lib/olaApi';
+import { reverseGeocode, directionsBasic } from '../lib/olaApi';
 
 const motion = motionOriginal as any;
 
@@ -314,19 +314,40 @@ export default function UserDashboard() {
             console.log('[Simulation] No DB location for ambulance, using fallback:', dbLocation);
         }
 
-        setActiveRouteCoords(null); // wait for map to provide fresh route coords
-        setAmbStartLocation(dbLocation);
-        setSimulatedAmbLocation(dbLocation);
-        setAmbTargetLocation(pickupCoords);
-        setAmbAnimationStartTime(null);
-        setArrivingCountdown(0);
-        setWaitingCountdown(0);
-        setCurrentPhase('to_pickup');
-        pendingMoveRef.current = { phase: 'to_pickup', requestedAt: Date.now() };
+        // Fetch actual ETA from directions API (same as driver portal)
+        const initPhase = async () => {
+            setActiveRouteCoords(null);
+            setAmbStartLocation(dbLocation);
+            setSimulatedAmbLocation(dbLocation);
+            setAmbTargetLocation(pickupCoords);
+            setAmbAnimationStartTime(null);
+            setArrivingCountdown(0);
+            setWaitingCountdown(0);
+            setCurrentPhase('to_pickup');
+            pendingMoveRef.current = { phase: 'to_pickup', requestedAt: Date.now() };
 
-        // Reasonable speed: 1.2x the ETA (capped)
-        const etaMinutes = Math.min(routeMetrics?.durationMinutes || 2, 5);
-        setAmbEtaSeconds(etaMinutes * 60 * 1.2);
+            try {
+                const routes = await directionsBasic({ 
+                    origin: dbLocation!, 
+                    destination: pickupCoords, 
+                    overview: 'full' 
+                });
+                if (routes.length && routes[0].duration_seconds) {
+                    // Use actual ETA with 20% buffer (same as driver portal)
+                    setAmbEtaSeconds(routes[0].duration_seconds * 1.2);
+                } else {
+                    // Fallback to estimate
+                    const etaMinutes = Math.min(routeMetrics?.durationMinutes || 2, 5);
+                    setAmbEtaSeconds(etaMinutes * 60 * 1.2);
+                }
+            } catch (e) {
+                console.error('[Simulation] Failed to fetch ETA:', e);
+                const etaMinutes = Math.min(routeMetrics?.durationMinutes || 2, 5);
+                setAmbEtaSeconds(etaMinutes * 60 * 1.2);
+            }
+        };
+        
+        initPhase();
     }, [activeRide?.id, activeRide?.status, activeRide?.ambulanceId, pickupCoords, ambulances, currentPhase, routeMetrics?.durationMinutes]);
 
     // Start movement only after route polyline is ready (or after a short fallback timeout)
@@ -502,16 +523,35 @@ export default function UserDashboard() {
         if (currentPhase !== 'waiting_at_pickup') return;
         if (waitingCountdown !== 0) return;
 
-        // Reset for drop movement
-        setActiveRouteCoords(null); // map will provide pickup->drop route
-        setAmbStartLocation(pickupCoords);
-        setSimulatedAmbLocation(pickupCoords);
-        setAmbTargetLocation(dropCoords);
-        setAmbAnimationStartTime(Date.now());
-        setCurrentPhase('to_drop');
+        // Fetch actual ETA and start to_drop
+        const startWaitingToDrop = async () => {
+            setActiveRouteCoords(null);
+            setAmbStartLocation(pickupCoords);
+            setSimulatedAmbLocation(pickupCoords);
+            setAmbTargetLocation(dropCoords);
+            setCurrentPhase('to_drop');
 
-        const etaMinutes = routeMetrics?.durationMinutes || 8;
-        setAmbEtaSeconds(etaMinutes * 60 * 1.5);
+            try {
+                const routes = await directionsBasic({ 
+                    origin: pickupCoords, 
+                    destination: dropCoords, 
+                    overview: 'full' 
+                });
+                if (routes.length && routes[0].duration_seconds) {
+                    setAmbEtaSeconds(routes[0].duration_seconds * 1.2);
+                } else {
+                    const etaMinutes = routeMetrics?.durationMinutes || 8;
+                    setAmbEtaSeconds(etaMinutes * 60 * 1.2);
+                }
+            } catch (e) {
+                const etaMinutes = routeMetrics?.durationMinutes || 8;
+                setAmbEtaSeconds(etaMinutes * 60 * 1.2);
+            }
+
+            setAmbAnimationStartTime(Date.now());
+        };
+
+        startWaitingToDrop();
     }, [activeRide?.id, currentPhase, waitingCountdown, pickupCoords, dropCoords, routeMetrics?.durationMinutes]);
 
     // Handle real driver status update: When driver marks "Arrived at Pickup" (in_progress), skip simulation and start to_drop
@@ -523,19 +563,41 @@ export default function UserDashboard() {
 
         console.log('[Simulation] Driver marked in_progress, starting to_drop phase');
         
-        // Immediately start movement to drop
-        setActiveRouteCoords(null);
-        setAmbStartLocation(pickupCoords);
-        setSimulatedAmbLocation(pickupCoords);
-        setAmbTargetLocation(dropCoords);
-        setAmbAnimationStartTime(Date.now());
-        setCurrentPhase('to_drop');
-        setArrivingCountdown(0);
-        setWaitingCountdown(0);
-        pendingMoveRef.current = { phase: 'to_drop', requestedAt: Date.now() };
+        // Fetch actual ETA and start movement
+        const startToDropPhase = async () => {
+            setActiveRouteCoords(null);
+            setAmbStartLocation(pickupCoords);
+            setSimulatedAmbLocation(pickupCoords);
+            setAmbTargetLocation(dropCoords);
+            setCurrentPhase('to_drop');
+            setArrivingCountdown(0);
+            setWaitingCountdown(0);
+            pendingMoveRef.current = { phase: 'to_drop', requestedAt: Date.now() };
 
-        const etaMinutes = routeMetrics?.durationMinutes || 8;
-        setAmbEtaSeconds(etaMinutes * 60 * 0.8); // Slightly faster than ETA
+            try {
+                const routes = await directionsBasic({ 
+                    origin: pickupCoords, 
+                    destination: dropCoords, 
+                    overview: 'full' 
+                });
+                if (routes.length && routes[0].duration_seconds) {
+                    // Use actual ETA with 20% buffer (same as driver portal)
+                    setAmbEtaSeconds(routes[0].duration_seconds * 1.2);
+                } else {
+                    const etaMinutes = routeMetrics?.durationMinutes || 8;
+                    setAmbEtaSeconds(etaMinutes * 60 * 1.2);
+                }
+            } catch (e) {
+                console.error('[Simulation] Failed to fetch ETA for to_drop:', e);
+                const etaMinutes = routeMetrics?.durationMinutes || 8;
+                setAmbEtaSeconds(etaMinutes * 60 * 1.2);
+            }
+
+            // Start animation after ETA is set
+            setAmbAnimationStartTime(Date.now());
+        };
+
+        startToDropPhase();
     }, [activeRide?.id, activeRide?.status, pickupCoords, dropCoords, currentPhase, routeMetrics?.durationMinutes]);
 
   // Dynamic Markers & Routing Logic
@@ -994,7 +1056,7 @@ export default function UserDashboard() {
                                                         <div className="text-xs text-slate-500">4.9 ★</div>
                                                     </div>
                                                     <div className="text-center flex-1 px-4">
-                                                        <div className="text-2xl font-bold text-slate-900">{driverInfo.plateNumber || 'AMB-01'}</div>
+                                                        <div className="text-2xl font-bold text-white">{driverInfo.plateNumber || 'AMB-01'}</div>
                                                         <div className="text-xs text-slate-500 bg-slate-100 rounded-full px-2 py-1 inline-block mt-1">{driverInfo.type || 'BASIC'}</div>
                                                     </div>
                                                     <div className="text-center">
