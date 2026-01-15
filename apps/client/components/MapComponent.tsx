@@ -15,6 +15,7 @@ interface MapProps {
     start: { lat: number; lng: number };
     end: { lat: number; lng: number };
   } | null;
+  liveRouteCoords?: [number, number][] | null; // Live/shrinking route coordinates [lng, lat] - overrides fetched route display
   onMapLoad?: () => void;
   onRouteInfo?: (info: { distanceKm: number; durationMinutes: number } | null) => void;
   onRouteCoords?: (coords: [number, number][] | null) => void; // Route polyline coordinates [lng, lat]
@@ -34,7 +35,7 @@ const loadOlaMapsSdk = () => {
     return olaMapsPromise;
 };
 
-export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad, onRouteInfo, onRouteCoords }: MapProps) => {
+export const MapComponent = ({ center, zoom = 14, markers = [], route, liveRouteCoords, onMapLoad, onRouteInfo, onRouteCoords }: MapProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<any>(null);
     const [isMapReady, setIsMapReady] = useState(false);
@@ -295,6 +296,28 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, onMapLoad
         
         draw();
     }, [route, isMapReady, onRouteInfo, onRouteCoords]);
+
+    // Update route display with live/shrinking coordinates (for ambulance movement)
+    useEffect(() => {
+        if (!isMapReady || !mapInstance.current) return;
+        if (!liveRouteCoords || liveRouteCoords.length < 2) return;
+        
+        const map = mapInstance.current;
+        
+        const geojsonData = {
+            type: 'Feature' as const,
+            properties: {},
+            geometry: {
+                type: 'LineString' as const,
+                coordinates: liveRouteCoords,
+            },
+        };
+        
+        // Update the route source with shrinking coordinates
+        if (map.getSource?.('route-source')) {
+            (map.getSource('route-source') as any)?.setData?.(geojsonData);
+        }
+    }, [liveRouteCoords, isMapReady]);
 
     // 2. Sync Center
     useEffect(() => {

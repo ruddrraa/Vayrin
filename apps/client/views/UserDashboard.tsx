@@ -8,6 +8,7 @@ import { Navigation, Droplet, ShoppingCart, LogOut, ArrowRight, CheckCircle2, He
 import { Ambulance, AmbulanceStatus } from '../types';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import { rideService } from '../src/services/api';
+import { reverseGeocode } from '../lib/olaApi';
 
 const motion = motionOriginal as any;
 
@@ -76,6 +77,7 @@ export default function UserDashboard() {
     const [routeMetrics, setRouteMetrics] = useState<{ distanceKm: number; durationMinutes: number } | null>(null);
     const [selectedAmbulanceId, setSelectedAmbulanceId] = useState<string | null>(null);
     const [routePolylineCoords, setRoutePolylineCoords] = useState<[number, number][] | null>(null); // [lng, lat] from route API
+    const [remainingRouteCoords, setRemainingRouteCoords] = useState<[number, number][] | null>(null); // Shrinking route as ambulance moves
   
   // Fake Ambulance Logic
   const [simulatedAmbLocation, setSimulatedAmbLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -91,6 +93,7 @@ export default function UserDashboard() {
     const lastSupabaseUpdateRef = useRef<{ timestamp: number; lat: number; lng: number } | null>(null);
         const pendingMoveRef = useRef<{ phase: 'to_pickup' | 'to_drop'; requestedAt: number } | null>(null);
     const prevRideIdRef = useRef<string | null>(null);
+    const [currentRouteSegmentIndex, setCurrentRouteSegmentIndex] = useState<number>(0); // Track which segment ambulance is on
   
   // Autocomplete
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -118,6 +121,7 @@ export default function UserDashboard() {
         // curr is null
         if (!prev) return; // first load
 
+        console.log('[UserDashboard] Ride ended, resetting to booking state');
         prevRideIdRef.current = null;
         setPickup('');
         setDrop('');
@@ -127,6 +131,20 @@ export default function UserDashboard() {
         setRouteMetrics(null);
         setRoutePolylineCoords(null);
         setRoutePath(null);
+        setRemainingRouteCoords(null);
+        // Reset simulation state
+        setSimulatedAmbLocation(null);
+        setAmbStartLocation(null);
+        setAmbTargetLocation(null);
+        setAmbAnimationStartTime(null);
+        setCurrentPhase(null);
+        setActiveRouteCoords(null);
+        setAmbulanceBearing(0);
+        setWaitingCountdown(0);
+        setArrivingCountdown(0);
+        setCurrentRouteSegmentIndex(0);
+        lastSupabaseUpdateRef.current = null;
+        pendingMoveRef.current = null;
     }, [activeRide?.id]);
 
   // FAKE AMBULANCE SIMULATION - Follows actual route polyline like Uber/Ola
@@ -148,10 +166,10 @@ export default function UserDashboard() {
     return (toDeg(Math.atan2(x, y)) + 360) % 360;
   };
   
-  // Helper: Get position along polyline at a given progress (0-1)
-  const getPositionOnPolyline = (coords: [number, number][], progress: number): {lat: number, lng: number, bearing: number} => {
-    if (!coords || coords.length === 0) return { lat: 0, lng: 0, bearing: 0 };
-    if (coords.length === 1) return { lat: coords[0][1], lng: coords[0][0], bearing: 0 };
+  // Helper: Get position along polyline at a given progress (0-1) and also return segment index
+  const getPositionOnPolyline = (coords: [number, number][], progress: number): {lat: number, lng: number, bearing: number, segmentIndex: number} => {
+    if (!coords || coords.length === 0) return { lat: 0, lng: 0, bearing: 0, segmentIndex: 0 };
+    if (coords.length === 1) return { lat: coords[0][1], lng: coords[0][0], bearing: 0, segmentIndex: 0 };
     
     // Calculate total length
     let totalLength = 0;
@@ -165,7 +183,7 @@ export default function UserDashboard() {
       totalLength += len;
     }
     
-    if (totalLength === 0) return { lat: coords[0][1], lng: coords[0][0], bearing: 0 };
+    if (totalLength === 0) return { lat: coords[0][1], lng: coords[0][0], bearing: 0, segmentIndex: 0 };
     
     // Find position at target distance
     const targetDistance = progress * totalLength;
@@ -184,7 +202,7 @@ export default function UserDashboard() {
           { lat: coords[i+1][1], lng: coords[i+1][0] }
         );
         
-        return { lat, lng, bearing };
+        return { lat, lng, bearing, segmentIndex: i };
       }
       traveled += segmentLengths[i];
     }
@@ -195,7 +213,18 @@ export default function UserDashboard() {
       { lat: coords[lastIdx-1][1], lng: coords[lastIdx-1][0] },
       { lat: coords[lastIdx][1], lng: coords[lastIdx][0] }
     );
-    return { lat: coords[lastIdx][1], lng: coords[lastIdx][0], bearing };
+    return { lat: coords[lastIdx][1], lng: coords[lastIdx][0], bearing, segmentIndex: lastIdx - 1 };
+  };
+
+  // Helper: Get remaining route from current position
+  const getRemainingRoute = (coords: [number, number][], currentPos: {lat: number, lng: number}, segmentIndex: number): [number, number][] => {
+    if (!coords || coords.length < 2) return [];
+    // Start with current position, then add remaining points
+    const remaining: [number, number][] = [[currentPos.lng, currentPos.lat]];
+    for (let i = segmentIndex + 1; i < coords.length; i++) {
+      remaining.push(coords[i]);
+    }
+    return remaining;
   };
   
   // Helper: Calculate distance between two points in meters (Haversine formula)
@@ -269,8 +298,21 @@ export default function UserDashboard() {
         const assignedAmbulance = activeRide.ambulanceId
             ? ambulances.find(a => a.id === activeRide.ambulanceId)
             : null;
-        const dbLocation = assignedAmbulance?.location;
-        if (!dbLocation) return;
+        
+        // Use ambulance's stored location, or fallback to a nearby random offset from pickup
+        let dbLocation = assignedAmbulance?.location;
+        if (!dbLocation) {
+            // Fallback: Start ambulance ~2km away from pickup in a random direction
+            const angle = Math.random() * 2 * Math.PI;
+            const offsetKm = 1.5 + Math.random() * 1; // 1.5-2.5 km away
+            const latOffset = (offsetKm / 111) * Math.cos(angle);
+            const lngOffset = (offsetKm / (111 * Math.cos(pickupCoords.lat * Math.PI / 180))) * Math.sin(angle);
+            dbLocation = {
+                lat: pickupCoords.lat + latOffset,
+                lng: pickupCoords.lng + lngOffset
+            };
+            console.log('[Simulation] No DB location for ambulance, using fallback:', dbLocation);
+        }
 
         setActiveRouteCoords(null); // wait for map to provide fresh route coords
         setAmbStartLocation(dbLocation);
@@ -344,22 +386,31 @@ export default function UserDashboard() {
             const routeToFollow = activeRouteCoords;
             let newLocation: { lat: number; lng: number } | null = null;
             let newBearing = ambulanceBearing;
+            let segmentIdx = 0;
 
             if (routeToFollow && routeToFollow.length > 1) {
                 const pos = getPositionOnPolyline(routeToFollow, easedProgress);
                 newLocation = { lat: pos.lat, lng: pos.lng };
                 newBearing = pos.bearing;
+                segmentIdx = pos.segmentIndex;
+                
+                // Update remaining route (shrinking polyline)
+                const remaining = getRemainingRoute(routeToFollow, newLocation, segmentIdx);
+                setRemainingRouteCoords(remaining);
             } else if (ambStartLocation && ambTargetLocation) {
                 const newLat = ambStartLocation.lat + (ambTargetLocation.lat - ambStartLocation.lat) * easedProgress;
                 const newLng = ambStartLocation.lng + (ambTargetLocation.lng - ambStartLocation.lng) * easedProgress;
                 newLocation = { lat: newLat, lng: newLng };
                 newBearing = calculateBearing(ambStartLocation, ambTargetLocation);
+                // For straight line, show remaining as current pos to target
+                setRemainingRouteCoords([[newLocation.lng, newLocation.lat], [ambTargetLocation.lng, ambTargetLocation.lat]]);
             }
 
             if (!newLocation) return;
 
             setSimulatedAmbLocation(newLocation);
             setAmbulanceBearing(newBearing);
+            setCurrentRouteSegmentIndex(segmentIdx);
 
             // Throttled Supabase live location update
             if (activeRide.ambulanceId) {
@@ -386,13 +437,13 @@ export default function UserDashboard() {
                     setAmbAnimationStartTime(null);
                     setActiveRouteCoords(null);
                     setCurrentPhase('arriving');
-                    setArrivingCountdown(50);
+                    setArrivingCountdown(5); // Short countdown for arriving notification
                     pendingMoveRef.current = null;
                     return;
                 }
             }
 
-            // Arrive at drop => wait 5 seconds then complete ride
+            // Arrive at drop => show "arrived at destination" state
             if (currentPhase === 'to_drop' && dropCoords) {
                 const distanceToDrop = getDistanceMeters(newLocation, dropCoords);
                 if (distanceToDrop <= 5 || rawProgress >= 1) {
@@ -400,6 +451,7 @@ export default function UserDashboard() {
                     setSimulatedAmbLocation(dropCoords);
                     setAmbAnimationStartTime(null);
                     setActiveRouteCoords(null);
+                    setRemainingRouteCoords(null);
                     setCurrentPhase('completing');
                     pendingMoveRef.current = null;
                     return;
@@ -412,16 +464,9 @@ export default function UserDashboard() {
         return () => clearInterval(intervalId);
     }, [activeRide?.id, activeRide?.ambulanceId, ambAnimationStartTime, ambEtaSeconds, currentPhase, activeRouteCoords, pickupCoords, ambStartLocation, ambTargetLocation, ambulanceBearing, updateDriverLocation]);
 
-    // After reaching drop, wait 5 seconds then complete ride and reset UI (via context)
-    useEffect(() => {
-        if (!activeRide) return;
-        if (currentPhase !== 'completing') return;
-        const rideId = activeRide.id;
-        const timerId = setTimeout(() => {
-            updateRideStatus(rideId, 'completed').catch(err => console.warn('Failed to complete ride', err));
-        }, 5000);
-        return () => clearTimeout(timerId);
-    }, [activeRide?.id, currentPhase, updateRideStatus]);
+    // NOTE: We do NOT auto-complete the ride from patient side!
+    // The DRIVER must press "Complete Trip" button to finish the ride.
+    // Patient portal will receive realtime update and reset automatically.
 
     // Arriving countdown tick
     useEffect(() => {
@@ -438,7 +483,7 @@ export default function UserDashboard() {
         if (currentPhase !== 'arriving') return;
         if (arrivingCountdown !== 0) return;
         setCurrentPhase('waiting_at_pickup');
-        setWaitingCountdown(120);
+        setWaitingCountdown(10); // Short wait before auto-starting to drop
     }, [currentPhase, arrivingCountdown]);
 
     // Waiting countdown tick
@@ -468,6 +513,30 @@ export default function UserDashboard() {
         const etaMinutes = routeMetrics?.durationMinutes || 8;
         setAmbEtaSeconds(etaMinutes * 60 * 1.5);
     }, [activeRide?.id, currentPhase, waitingCountdown, pickupCoords, dropCoords, routeMetrics?.durationMinutes]);
+
+    // Handle real driver status update: When driver marks "Arrived at Pickup" (in_progress), skip simulation and start to_drop
+    useEffect(() => {
+        if (!activeRide || !pickupCoords || !dropCoords) return;
+        if (activeRide.status !== 'in_progress') return;
+        // If already in to_drop or completing phase, don't restart
+        if (currentPhase === 'to_drop' || currentPhase === 'completing') return;
+
+        console.log('[Simulation] Driver marked in_progress, starting to_drop phase');
+        
+        // Immediately start movement to drop
+        setActiveRouteCoords(null);
+        setAmbStartLocation(pickupCoords);
+        setSimulatedAmbLocation(pickupCoords);
+        setAmbTargetLocation(dropCoords);
+        setAmbAnimationStartTime(Date.now());
+        setCurrentPhase('to_drop');
+        setArrivingCountdown(0);
+        setWaitingCountdown(0);
+        pendingMoveRef.current = { phase: 'to_drop', requestedAt: Date.now() };
+
+        const etaMinutes = routeMetrics?.durationMinutes || 8;
+        setAmbEtaSeconds(etaMinutes * 60 * 0.8); // Slightly faster than ETA
+    }, [activeRide?.id, activeRide?.status, pickupCoords, dropCoords, currentPhase, routeMetrics?.durationMinutes]);
 
   // Dynamic Markers & Routing Logic
   const [markers, setMarkers] = useState<Array<{id: string, lat: number, lng: number, type: 'USER' | 'AMBULANCE' | 'DESTINATION', bearing?: number}>>([]);
@@ -575,13 +644,26 @@ export default function UserDashboard() {
   const handleCurrentLocation = () => {
       if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
-              (position) => {
+              async (position) => {
                   const { latitude, longitude } = position.coords;
                   const coords = { lat: latitude, lng: longitude };
                   setPickupCoords(coords);
                   setMapCenter(coords);
-                  setPickup('Current Location');
                   setRouteMetrics(null);
+                  
+                  // Reverse geocode to get actual address
+                  setPickup('Getting address...');
+                  try {
+                    const result = await reverseGeocode(latitude, longitude);
+                    if (result?.formatted_address) {
+                      setPickup(result.formatted_address);
+                    } else {
+                      setPickup(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                    }
+                  } catch (err) {
+                    console.error('Reverse geocode failed:', err);
+                    setPickup(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                  }
               },
               (error) => {
                   console.error("Error getting location", error);
@@ -595,13 +677,24 @@ export default function UserDashboard() {
   useEffect(() => {
       if (!pickupCoords && !pickup && navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
-              (position) => {
+              async (position) => {
                   const { latitude, longitude } = position.coords;
                   const coords = { lat: latitude, lng: longitude };
                   setPickupCoords(coords);
                   setMapCenter(coords);
-                  setPickup('Current Location');
                   setRouteMetrics(null);
+                  
+                  // Reverse geocode to get actual address
+                  try {
+                    const result = await reverseGeocode(latitude, longitude);
+                    if (result?.formatted_address) {
+                      setPickup(result.formatted_address);
+                    } else {
+                      setPickup(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                    }
+                  } catch {
+                    setPickup(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                  }
               },
               () => {/* silent fail */},
               { enableHighAccuracy: true, timeout: 5000 }
@@ -692,6 +785,7 @@ export default function UserDashboard() {
                                  center={mapCenter} 
                                  markers={markers} 
                                  route={routePath} 
+                                 liveRouteCoords={remainingRouteCoords}
                                  onRouteInfo={setRouteMetrics}
                                  onRouteCoords={setRoutePolylineCoords}
                              />
@@ -775,32 +869,46 @@ export default function UserDashboard() {
                                                 <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                                                     {availableAmbulances.length > 0 ? availableAmbulances.map((amb) => {
                                                         const isSelected = selectedAmbulanceId === amb.id;
-                                                        const etaText = durationMin ? `${durationMin + 2} min` : 'ETA after confirm';
-                                                        const typeAbbrev = amb.type === 'ADVANCED' ? 'ADV' : amb.type === 'ICU' ? 'ICU' : amb.type === 'BASIC' ? 'BAS' : (amb.type || 'AMB').slice(0, 3).toUpperCase();
+                                                        const etaText = durationMin ? `${durationMin + 2} min` : 'Soon';
+                                                        const typeLabel = amb.type === 'ICU' ? 'ICU' : amb.type === 'ADVANCED' ? 'Advanced' : 'Basic';
+                                                        const typeDesc = amb.type === 'ICU' 
+                                                            ? 'Critical care with ICU facilities' 
+                                                            : amb.type === 'ADVANCED' 
+                                                            ? 'Advanced life support equipped' 
+                                                            : 'Basic life support ambulance';
+                                                        const calculatedFare = Math.max(amb.baseCharge || 0, (amb.baseCharge || 0) + Math.max((distanceKm || 5) - 1, 0) * (amb.pricePerKm || 0));
+                                                        
                                                         return (
                                                             <button
                                                                 key={amb.id}
                                                                 onClick={() => setSelectedAmbulanceId(amb.id)}
-                                                                className={`w-full text-left border rounded-2xl p-3.5 flex items-center gap-3 transition-all ${isSelected ? 'border-white/30 bg-white/10 shadow-md' : 'border-white/10 hover:border-white/20 bg-white/5'}`}
+                                                                className={`w-full text-left border rounded-2xl p-4 flex items-center gap-4 transition-all ${isSelected ? 'border-white bg-white/10 shadow-lg ring-2 ring-white/20' : 'border-white/10 hover:border-white/20 bg-white/5'}`}
                                                             >
-                                                                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white font-black text-sm">
-                                                                    {typeAbbrev}
+                                                                {/* Ambulance Type Icon */}
+                                                                <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${
+                                                                    amb.type === 'ICU' ? 'bg-red-500/20 text-red-400' :
+                                                                    amb.type === 'ADVANCED' ? 'bg-amber-500/20 text-amber-400' :
+                                                                    'bg-blue-500/20 text-blue-400'
+                                                                }`}>
+                                                                    <AmbulanceIcon size={28} />
                                                                 </div>
+                                                                
+                                                                {/* Type Info */}
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex items-center gap-2">
-                                                                        <span className="font-bold text-white capitalize text-sm">{(amb.type || 'Ambulance').toLowerCase()}</span>
-                                                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/60 truncate">{amb.plateNumber || 'Plate pending'}</span>
+                                                                        <span className="font-bold text-white text-base">{typeLabel}</span>
+                                                                        {amb.type === 'ICU' && (
+                                                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">PREMIUM</span>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="text-xs text-white/60 mt-1 truncate">
-                                                                        {amb.driverName || 'On-call'} • ₹{amb.baseCharge || 0} + ₹{amb.pricePerKm || 0}/km
-                                                                    </div>
-                                                                    {amb.equipment?.length > 0 && (
-                                                                        <div className="text-[10px] text-white/40 mt-0.5 truncate">{amb.equipment.slice(0, 2).join(', ')}</div>
-                                                                    )}
+                                                                    <div className="text-xs text-white/50 mt-0.5">{typeDesc}</div>
+                                                                    <div className="text-[11px] text-white/40 mt-1">~{etaText} away</div>
                                                                 </div>
+                                                                
+                                                                {/* Price */}
                                                                 <div className="text-right shrink-0">
-                                                                    <div className="font-bold text-white">₹{Math.max(amb.baseCharge || 0, (amb.baseCharge || 0) + Math.max((distanceKm || 5.2) - 1, 0) * (amb.pricePerKm || 0)).toFixed(0)}</div>
-                                                                    <div className="text-[10px] text-white/50">~{etaText}</div>
+                                                                    <div className="font-bold text-white text-lg">₹{calculatedFare.toFixed(0)}</div>
+                                                                    <div className="text-[10px] text-white/40">estimated</div>
                                                                 </div>
                                                             </button>
                                                         );

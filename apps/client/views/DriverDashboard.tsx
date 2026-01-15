@@ -6,6 +6,7 @@ import { RideCard } from '../components/rides';
 import { LogOut, Navigation, CheckCircle, Power, Coffee, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RideStatus } from '../types';
+import { directionsBasic } from '../lib/olaApi';
 
 export default function DriverDashboard() {
   const {
@@ -25,6 +26,45 @@ export default function DriverDashboard() {
   const driverRecord =
     drivers.find((d) => d.id === currentUser?.id) ||
     drivers.find((d) => d.name === currentUser?.name);
+
+  // Earnings state with localStorage persistence
+  const [totalEarnings, setTotalEarnings] = useState<number>(() => {
+    const saved = localStorage.getItem('driverEarnings');
+    return saved ? parseFloat(saved) : 0;
+  });
+  const [completedTrips, setCompletedTrips] = useState<number>(() => {
+    const saved = localStorage.getItem('driverTrips');
+    return saved ? parseInt(saved) : 0;
+  });
+  const prevRideIdRef = useRef<string | null>(null);
+
+  // Track ride completion for earnings
+  useEffect(() => {
+    const prevId = prevRideIdRef.current;
+    const currId = activeRide?.id ?? null;
+    
+    if (currId) {
+      prevRideIdRef.current = currId;
+    } else if (prevId && !currId) {
+      // Ride just ended - check localStorage for last completed ride price
+      const lastPrice = localStorage.getItem('lastCompletedRidePrice');
+      if (lastPrice) {
+        const price = parseFloat(lastPrice);
+        setTotalEarnings(prev => {
+          const newTotal = prev + price;
+          localStorage.setItem('driverEarnings', String(newTotal));
+          return newTotal;
+        });
+        setCompletedTrips(prev => {
+          const newCount = prev + 1;
+          localStorage.setItem('driverTrips', String(newCount));
+          return newCount;
+        });
+        localStorage.removeItem('lastCompletedRidePrice');
+      }
+      prevRideIdRef.current = null;
+    }
+  }, [activeRide?.id]);
 
   // Status State with localStorage persistence
   const [status, setStatus] = useState<'ACTIVE' | 'OFF_DUTY' | 'ON_LEAVE'>(() => {
@@ -53,11 +93,18 @@ export default function DriverDashboard() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const watchId = useRef<number | null>(null);
 
-  // Identify the ambulance assigned to this driver
-  const myAmbulance =
+  // Identify the ambulance assigned to this driver (check by driver ID assignment)
+  const myAmbulance = 
+    // First check if driver is primary driver for any ambulance
+    ambulances.find((a) => a.primaryDriverId === currentUser?.id) ||
+    // Then check if driver is alternate driver for any ambulance
+    ambulances.find((a) => a.alternateDriverId === currentUser?.id) ||
+    // Fallback: check by driver record ID
+    ambulances.find((a) => a.primaryDriverId === driverRecord?.id || a.alternateDriverId === driverRecord?.id) ||
+    // Legacy fallback: match by name
     ambulances.find((a) => a.driverName === currentUser?.name) ||
     ambulances.find((a) => a.hospitalId === currentUser?.id) ||
-    ambulances[0];
+    null;
 
   // --- Geolocation Tracking ---
   useEffect(() => {
@@ -87,39 +134,205 @@ export default function DriverDashboard() {
     };
   }, [isOnline, myAmbulance?.id, updateDriverLocation]);
 
-  // Fallback location for map if geo not ready
-  const mapCenter = location || { lat: 28.6139, lng: 77.209 };
+  // Fallback location: use ambulance's stored location from DB, or pickup if available
+  const fallbackLocation = myAmbulance?.location || (activeRide ? { lat: activeRide.pickupLat, lng: activeRide.pickupLng } : null);
+  const effectiveLocation = location || fallbackLocation;
+
+  // --- Simulation States ---
+  const [simulatedLocation, setSimulatedLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [routePolyline, setRoutePolyline] = useState<[number, number][] | null>(null);
+  const [remainingRoute, setRemainingRoute] = useState<[number, number][] | null>(null);
+  const [simPhase, setSimPhase] = useState<'to_pickup' | 'to_drop' | null>(null);
+  const [simEtaSeconds, setSimEtaSeconds] = useState<number>(60); // ETA-based timing
+  const [simStartTime, setSimStartTime] = useState<number | null>(null);
+  const simIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const mapCenter = simulatedLocation || effectiveLocation || { lat: 28.6139, lng: 77.209 };
+
+  // Helper: Get position on polyline
+  const getPositionOnPolyline = (coords: [number, number][], progress: number): {lat: number, lng: number} => {
+    if (!coords || coords.length === 0) return { lat: 0, lng: 0 };
+    if (coords.length === 1) return { lat: coords[0][1], lng: coords[0][0] };
+    
+    let totalLength = 0;
+    const segmentLengths: number[] = [];
+    for (let i = 0; i < coords.length - 1; i++) {
+      const dx = coords[i+1][0] - coords[i][0];
+      const dy = coords[i+1][1] - coords[i][1];
+      segmentLengths.push(Math.sqrt(dx*dx + dy*dy));
+      totalLength += segmentLengths[i];
+    }
+    if (totalLength === 0) return { lat: coords[0][1], lng: coords[0][0] };
+    
+    const targetDist = progress * totalLength;
+    let traveled = 0;
+    for (let i = 0; i < segmentLengths.length; i++) {
+      if (traveled + segmentLengths[i] >= targetDist) {
+        const segProg = (targetDist - traveled) / segmentLengths[i];
+        return {
+          lng: coords[i][0] + (coords[i+1][0] - coords[i][0]) * segProg,
+          lat: coords[i][1] + (coords[i+1][1] - coords[i][1]) * segProg,
+        };
+      }
+      traveled += segmentLengths[i];
+    }
+    return { lat: coords[coords.length-1][1], lng: coords[coords.length-1][0] };
+  };
+
+  // Fetch route polyline when ride starts
+  useEffect(() => {
+    if (!activeRide) {
+      setRoutePolyline(null);
+      setRemainingRoute(null);
+      setSimulatedLocation(null);
+      setSimPhase(null);
+      setSimStartTime(null);
+      return;
+    }
+
+    const fetchRoute = async () => {
+      let start: {lat: number, lng: number};
+      let end: {lat: number, lng: number};
+      
+      if (activeRide.status === 'accepted') {
+        start = effectiveLocation || { lat: activeRide.pickupLat - 0.015, lng: activeRide.pickupLng - 0.015 };
+        end = { lat: activeRide.pickupLat, lng: activeRide.pickupLng };
+        setSimPhase('to_pickup');
+      } else if (activeRide.status === 'in_progress') {
+        start = { lat: activeRide.pickupLat, lng: activeRide.pickupLng };
+        end = { lat: activeRide.dropLat, lng: activeRide.dropLng };
+        setSimPhase('to_drop');
+      } else {
+        return;
+      }
+
+      try {
+        const routes = await directionsBasic({ origin: start, destination: end, overview: 'full' });
+        if (routes.length && routes[0].geometry) {
+          // Decode polyline
+          const decoded = decodePolyline(routes[0].geometry);
+          setRoutePolyline(decoded);
+          setRemainingRoute(decoded);
+          setSimulatedLocation(start);
+          setSimStartTime(Date.now());
+          
+          // Extract ETA from route duration (in seconds) - add 20% buffer for realism
+          const durationSec = routes[0].duration_seconds || 120;
+          setSimEtaSeconds(durationSec * 1.2);
+        }
+      } catch (e) {
+        console.error('Failed to fetch route:', e);
+      }
+    };
+
+    fetchRoute();
+  }, [activeRide?.id, activeRide?.status]);
+
+  // Decode polyline helper
+  const decodePolyline = (encoded: string): [number, number][] => {
+    if (typeof encoded !== 'string') return [];
+    const coords: [number, number][] = [];
+    let index = 0, lat = 0, lng = 0;
+    while (index < encoded.length) {
+      let b, shift = 0, result = 0;
+      do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+      shift = 0; result = 0;
+      do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+      coords.push([lng / 1e5, lat / 1e5]);
+    }
+    return coords;
+  };
+
+  // Simulation movement loop - ETA-based timing like patient portal
+  useEffect(() => {
+    if (!routePolyline || routePolyline.length < 2 || !simPhase || !simStartTime) return;
+
+    simIntervalRef.current = setInterval(() => {
+      const elapsedMs = Date.now() - simStartTime;
+      const totalMs = Math.max(simEtaSeconds, 1) * 1000;
+      const rawProgress = Math.min(elapsedMs / totalMs, 1);
+      
+      // Easing for realistic movement (ease-in-out)
+      const easedProgress = rawProgress < 0.5
+        ? 2 * rawProgress * rawProgress
+        : 1 - Math.pow(-2 * rawProgress + 2, 2) / 2;
+      
+      const pos = getPositionOnPolyline(routePolyline, easedProgress);
+      setSimulatedLocation(pos);
+      
+      // Update remaining route (shrinking polyline)
+      const remainingIdx = Math.floor(easedProgress * (routePolyline.length - 1));
+      const remaining: [number, number][] = [[pos.lng, pos.lat], ...routePolyline.slice(remainingIdx + 1)];
+      setRemainingRoute(remaining);
+      
+      // Throttled Supabase location update (every 3 seconds)
+      if (myAmbulance && Math.floor(elapsedMs / 3000) !== Math.floor((elapsedMs - 100) / 3000)) {
+        updateDriverLocation(myAmbulance.id, pos.lat, pos.lng, 0).catch(() => {});
+      }
+      
+      // Stop when arrived
+      if (rawProgress >= 1) {
+        if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+      }
+    }, 100);
+
+    return () => {
+      if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+    };
+  }, [routePolyline, simPhase, simStartTime, simEtaSeconds, myAmbulance?.id]);
 
   // --- Route Calculation ---
   const [route, setRoute] = useState<{ start: any; end: any } | null>(null);
 
   useEffect(() => {
-    if (activeRide && location) {
+    if (activeRide && effectiveLocation) {
       if (activeRide.status === 'accepted') {
         // Route: Driver -> Pickup
         setRoute({
-          start: location,
+          start: simulatedLocation || effectiveLocation,
           end: { lat: activeRide.pickupLat, lng: activeRide.pickupLng },
         });
       } else if (activeRide.status === 'in_progress') {
-        // Route: Driver (at Pickup) -> Drop
+        // Route: Driver (simulated location) -> Drop
         setRoute({
-          start: location,
+          start: simulatedLocation || { lat: activeRide.pickupLat, lng: activeRide.pickupLng },
           end: { lat: activeRide.dropLat, lng: activeRide.dropLng },
         });
       }
     } else {
       setRoute(null);
     }
-  }, [activeRide, location]);
+  }, [activeRide, effectiveLocation, simulatedLocation]);
 
   const handleAccept = async (rideId: string) => {
-    if (!myAmbulance || !currentUser) return;
+    console.log('[handleAccept] rideId:', rideId, 'myAmbulance:', myAmbulance, 'currentUser:', currentUser);
+    if (!myAmbulance) {
+      alert('No ambulance assigned to you. Please contact admin to assign an ambulance.');
+      return;
+    }
+    if (!currentUser) {
+      alert('Not logged in.');
+      return;
+    }
     await acceptRideRequest(rideId, currentUser.id, myAmbulance.id);
   };
 
   const handleRideStatusChange = async (newStatus: RideStatus) => {
     if (activeRide) {
+      // Save price before completing for earnings calculation
+      if (newStatus === 'completed' && activeRide.price) {
+        localStorage.setItem('lastCompletedRidePrice', String(activeRide.price));
+      }
+      
+      // Reset simulation when moving to in_progress
+      if (newStatus === 'in_progress') {
+        setSimStartTime(null);
+        setRoutePolyline(null);
+        setRemainingRoute(null);
+      }
+      
       await updateRideStatus(activeRide.id, newStatus);
     }
   };
@@ -210,9 +423,14 @@ export default function DriverDashboard() {
             center={mapCenter}
             zoom={15}
             markers={[
-              // Me
-              ...(location
-                ? [{ id: 'me', lat: location.lat, lng: location.lng, type: 'AMBULANCE' as const }]
+              // Me (Driver's ambulance) - use simulated location if available
+              ...((simulatedLocation || effectiveLocation)
+                ? [{ 
+                    id: 'me', 
+                    lat: (simulatedLocation || effectiveLocation)!.lat, 
+                    lng: (simulatedLocation || effectiveLocation)!.lng, 
+                    type: 'AMBULANCE' as const 
+                  }]
                 : []),
               // Pickup
               ...(activeRide
@@ -238,6 +456,7 @@ export default function DriverDashboard() {
                 : []),
             ]}
             route={route}
+            liveRouteCoords={remainingRoute}
           />
         </div>
 
@@ -246,12 +465,12 @@ export default function DriverDashboard() {
           {/* Stats Header */}
           <div className="grid grid-cols-2 divide-x divide-white/10 border-b border-white/10 shrink-0">
             <div className="p-4 text-center">
-              <div className="text-2xl font-black text-white">₹124</div>
+              <div className="text-2xl font-black text-white">₹{totalEarnings}</div>
               <div className="text-xs font-bold text-white/50 uppercase tracking-wider">Earnings</div>
             </div>
             <div className="p-4 text-center">
-              <div className="text-2xl font-black text-white">4.9</div>
-              <div className="text-xs font-bold text-white/50 uppercase tracking-wider">Rating</div>
+              <div className="text-2xl font-black text-white">{completedTrips}</div>
+              <div className="text-xs font-bold text-white/50 uppercase tracking-wider">Trips</div>
             </div>
           </div>
 

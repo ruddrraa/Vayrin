@@ -336,10 +336,12 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       onRideRequests: (payload) => {
         if (!payload.new || Object.keys(payload.new).length === 0) return;
         const newRide = mapRide(payload.new);
+        console.log('[Realtime] ride_requests update:', newRide.status, newRide.id);
         
         if (currentUser.role === 'USER') {
             if (newRide.userId === currentUser.id) {
                 if (['completed', 'cancelled'].includes(newRide.status)) {
+                    console.log('[Realtime] Ride completed/cancelled, clearing activeRide');
                     setActiveRide(null);
                 } else {
                     setActiveRide(newRide);
@@ -630,11 +632,8 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
         let ride = mapRide(rideRow);
         setActiveRide(ride);
 
-        const dispatch = await rideService.autoDispatchRide(ride.id, req.ambulanceId || null);
-        if (dispatch) {
-          ride = { ...ride, status: 'accepted', ambulanceId: dispatch.ambulanceId, driverId: dispatch.driverId };
-          setActiveRide(ride);
-        }
+        // Don't auto-dispatch - let drivers see and accept the request manually
+        // The ride stays in 'searching' status until a driver accepts it
 
         return ride.id;
       } catch (e) {
@@ -647,9 +646,26 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       await driverService.updateAmbulanceLocation({ ambulanceId, lat, lng, heading });
   };
   
-  // No changes to these, just re-export
+  // Accept ride request and update local state
   const acceptRideRequest = async (rideId: string, driverId: string, ambulanceId: string) => {
-      await rideService.acceptRideRequest({ rideId, driverId, ambulanceId });
+      try {
+        await rideService.acceptRideRequest({ rideId, driverId, ambulanceId });
+        
+        // Fetch the updated ride and set as active
+        const { data: updatedRide } = await supabase
+          .from('ride_requests')
+          .select('*')
+          .eq('id', rideId)
+          .single();
+        
+        if (updatedRide) {
+          setActiveRide(mapRide(updatedRide));
+          // Remove from available rides list
+          setAvailableRides(prev => prev.filter(r => r.id !== rideId));
+        }
+      } catch (e) {
+        console.error('Accept ride failed:', e);
+      }
   };
   const updateRideStatus = async (rideId: string, status: RideStatus) => {
       await rideService.updateRideStatus({

@@ -9,6 +9,44 @@ function getApiKey(): string {
   return key;
 }
 
+// Reverse Geocoding - Convert lat/lng to address
+export type ReverseGeocodeResult = {
+  formatted_address: string;
+  name?: string;
+  place_id?: string;
+};
+
+export async function reverseGeocode(lat: number, lng: number): Promise<ReverseGeocodeResult | null> {
+  const params = new URLSearchParams();
+  params.set("latlng", `${lat},${lng}`);
+  params.set("api_key", getApiKey());
+
+  const url = `${BASE_URL}/places/v1/reverse-geocode?${params.toString()}`;
+  
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error("Reverse geocode failed:", res.status);
+      return null;
+    }
+    const json = await res.json();
+    
+    // Ola returns results array
+    const results = json?.results ?? [];
+    if (results.length === 0) return null;
+    
+    const first = results[0];
+    return {
+      formatted_address: first.formatted_address ?? first.name ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      name: first.name,
+      place_id: first.place_id,
+    };
+  } catch (err) {
+    console.error("Reverse geocode error:", err);
+    return null;
+  }
+}
+
 export type AutocompleteSuggestion = {
   place_id: string;
   description: string;

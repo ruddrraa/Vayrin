@@ -75,24 +75,55 @@ export const rideService = {
     duration?: string;
     ambulance_id?: string | null;
   }): Promise<SupabaseRow<any>> {
-    // Prefer Edge Function for booking logic (RLS-safe + server-side dispatch)
-    const { data, error } = await supabase.functions.invoke('book-ride', {
-      body: {
+    // Try Edge Function first, fallback to direct DB insert if it fails
+    try {
+      const { data, error } = await supabase.functions.invoke('book-ride', {
+        body: {
+          pickup_lat: params.pickup_lat,
+          pickup_lng: params.pickup_lng,
+          pickup_address: params.pickup_address,
+          drop_lat: params.drop_lat,
+          drop_lng: params.drop_lng,
+          drop_address: params.drop_address,
+          price: params.price,
+          distance: params.distance,
+          duration: params.duration,
+          preferred_ambulance_id: params.ambulance_id ?? null,
+          auto_dispatch: false,
+        },
+      });
+      
+      if (!error && data?.ride) {
+        return data.ride as any;
+      }
+      // If edge function fails, fall through to direct insert
+      console.warn('Edge function failed, using direct insert:', error);
+    } catch (e) {
+      console.warn('Edge function not available, using direct insert:', e);
+    }
+
+    // Fallback: Direct database insert
+    const { data: rideData, error: insertError } = await supabase
+      .from('ride_requests')
+      .insert({
+        user_id: params.userId,
         pickup_lat: params.pickup_lat,
         pickup_lng: params.pickup_lng,
         pickup_address: params.pickup_address,
         drop_lat: params.drop_lat,
         drop_lng: params.drop_lng,
         drop_address: params.drop_address,
-        price: params.price,
-        distance: params.distance,
-        duration: params.duration,
-        preferred_ambulance_id: params.ambulance_id ?? null,
-        auto_dispatch: false,
-      },
-    });
-    assertNoError(error, 'rideService.createRideRequest (functions.book-ride)');
-    return ((data as any)?.ride ?? data) as any;
+        price: params.price ?? 0,
+        distance: params.distance ?? null,
+        duration: params.duration ?? null,
+        ambulance_id: params.ambulance_id ?? null,
+        status: 'searching',
+      })
+      .select()
+      .single();
+
+    assertNoError(insertError, 'rideService.createRideRequest (direct insert)');
+    return rideData as any;
   },
 
   async autoDispatchRide(
