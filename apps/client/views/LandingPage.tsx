@@ -485,7 +485,7 @@ export default function LandingPage() {
               </div>
           </div>
           <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-white/5 text-center text-slate-600 text-sm">
-              © 2024 VAYRIN. All rights reserved.
+              © 2026 VAYRIN. All rights reserved.
           </div>
       </footer>
 
