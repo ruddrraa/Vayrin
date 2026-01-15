@@ -316,9 +316,9 @@ export default function LandingPage() {
                  <div className="relative w-full aspect-square">
                      <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-white/5 rounded-full blur-3xl animate-pulse" />
                      <img 
-                        src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop" 
+                        src="/landingpagehero.png" 
                         alt="Network" 
-                        className="relative z-10 w-full h-full object-cover rounded-[3rem] border border-white/10 opacity-80 mix-blend-lighten mask-image-radial"
+                        className="relative z-10 w-full h-full object-cover rounded-[3rem] border border-white/10 mask-image-radial"
                      />
                      
                      {/* Floating Cards */}

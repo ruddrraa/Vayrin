@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Package, Clock, CheckCircle, XCircle, Truck, Building2, ArrowRight, RefreshCw } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { inventoryService } from '../../src/services/inventoryService';
+import { toast } from '../../lib/toast';
 
 export type InterHospitalOrderStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
 
@@ -148,12 +149,12 @@ export const InterHospitalOrders: React.FC<InterHospitalOrdersProps> = ({
 
       if (error) {
         console.error('[updateOrderStatus] Supabase error:', error);
-        alert(`Failed to update status: ${error.message}`);
+        toast.error(`Failed to update status: ${error.message}`);
         // Revert on error
         setOrders(previousOrders);
       } else if (!data || data.length === 0) {
         console.error('[updateOrderStatus] No rows updated - RLS policy might be blocking');
-        alert('Update failed: You may not have permission to update this order.');
+        toast.error('Update failed: You may not have permission to update this order.');
         // Revert if no rows affected
         setOrders(previousOrders);
       } else {
@@ -186,7 +187,7 @@ export const InterHospitalOrders: React.FC<InterHospitalOrdersProps> = ({
             
             if (updateError) {
               console.error('[updateOrderStatus] Failed to update component inventory:', updateError);
-              alert('Warning: Order status updated but inventory deduction failed.');
+              toast.warning('Order status updated but inventory deduction failed.');
             } else {
               console.log('[updateOrderStatus] Inventory deducted successfully. New units:', newUnits);
             }

@@ -7,6 +7,7 @@ import { LogOut, Navigation, CheckCircle, Power, Coffee, Activity } from 'lucide
 import { motion, AnimatePresence } from 'framer-motion';
 import { RideStatus } from '../types';
 import { directionsBasic } from '../lib/olaApi';
+import { toast } from '../lib/toast';
 
 export default function DriverDashboard() {
   const {
@@ -306,17 +307,35 @@ export default function DriverDashboard() {
     }
   }, [activeRide, effectiveLocation, simulatedLocation]);
 
+  const [isAccepting, setIsAccepting] = useState<string | null>(null); // Track which ride is being accepted
+
   const handleAccept = async (rideId: string) => {
     console.log('[handleAccept] rideId:', rideId, 'myAmbulance:', myAmbulance, 'currentUser:', currentUser);
+    
+    if (isAccepting) {
+      console.log('[handleAccept] Already accepting a ride, ignoring...');
+      return;
+    }
+    
     if (!myAmbulance) {
-      alert('No ambulance assigned to you. Please contact admin to assign an ambulance.');
+      toast.error('No ambulance assigned to you. Please contact admin.');
       return;
     }
     if (!currentUser) {
-      alert('Not logged in.');
+      toast.error('Not logged in. Please refresh the page.');
       return;
     }
-    await acceptRideRequest(rideId, currentUser.id, myAmbulance.id);
+    
+    setIsAccepting(rideId);
+    try {
+      await acceptRideRequest(rideId, currentUser.id, myAmbulance.id);
+      toast.success('Ride accepted! Navigate to pickup location.');
+    } catch (error) {
+      console.error('[handleAccept] Error:', error);
+      toast.error('Failed to accept ride. Please try again.');
+    } finally {
+      setIsAccepting(null);
+    }
   };
 
   const handleRideStatusChange = async (newStatus: RideStatus) => {
@@ -577,6 +596,7 @@ export default function DriverDashboard() {
                               ride={req}
                               onAccept={handleAccept}
                               isDriverView={true}
+                              isAccepting={isAccepting === req.id}
                             />
                           </motion.div>
                         ))}

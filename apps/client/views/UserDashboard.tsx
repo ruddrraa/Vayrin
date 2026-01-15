@@ -4,11 +4,12 @@ import { useApp } from '../context/AppContext';
 import { MapComponent } from '../components/MapComponent';
 import { Card, Button, Input, Label } from '../components/ui';
 import { motion as motionOriginal, AnimatePresence } from 'framer-motion';
-import { Navigation, Droplet, ShoppingCart, LogOut, ArrowRight, CheckCircle2, Heart, Trash, CreditCard, X, AlertTriangle, FileText, Package, Clock, Calendar, Settings, Search, MapPin, Ambulance as AmbulanceIcon, LocateFixed, Minus, Plus, Activity } from 'lucide-react';
+import { Navigation, Droplet, ShoppingCart, LogOut, ArrowRight, CheckCircle2, Heart, Trash, CreditCard, X, AlertTriangle, FileText, Package, Clock, Calendar, Settings, Search, MapPin, Ambulance as AmbulanceIcon, LocateFixed, Minus, Plus, Activity, User, Phone, Home, MapPinned, Shield, Bell, HelpCircle, ChevronRight, Star } from 'lucide-react';
 import { Ambulance, AmbulanceStatus } from '../types';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import { rideService } from '../src/services/api';
 import { reverseGeocode, directionsBasic } from '../lib/olaApi';
+import { toast } from '../lib/toast';
 
 const motion = motionOriginal as any;
 
@@ -37,13 +38,13 @@ export default function UserDashboard() {
     const [pCity, setPCity] = useState(currentUser?.city || '');
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
 
-    // Keep form state in sync if profile loads later
+    // Keep form state in sync with currentUser (also updates after profile save)
     useEffect(() => {
         setPName(currentUser?.name || '');
         setPPhone(currentUser?.phone || '');
         setPAddress(currentUser?.address || '');
         setPCity(currentUser?.city || '');
-    }, [currentUser?.id]);
+    }, [currentUser?.id, currentUser?.name, currentUser?.phone, currentUser?.address, currentUser?.city]);
 
     // --- My Rides ---
     const [myRides, setMyRides] = useState<any[]>([]);
@@ -86,6 +87,7 @@ export default function UserDashboard() {
   const [ambStartLocation, setAmbStartLocation] = useState<{lat: number, lng: number} | null>(null);
   const [ambTargetLocation, setAmbTargetLocation] = useState<{lat: number, lng: number} | null>(null);
   const [ambEtaSeconds, setAmbEtaSeconds] = useState<number>(120); // default 2 min
+  const [remainingEtaSeconds, setRemainingEtaSeconds] = useState<number>(0); // Dynamic countdown
     const [currentPhase, setCurrentPhase] = useState<'to_pickup' | 'arriving' | 'waiting_at_pickup' | 'to_drop' | 'completing' | null>(null);
   const [activeRouteCoords, setActiveRouteCoords] = useState<[number, number][] | null>(null); // The polyline coords for current phase
   const [waitingCountdown, setWaitingCountdown] = useState<number>(0); // Countdown timer in seconds
@@ -94,6 +96,9 @@ export default function UserDashboard() {
         const pendingMoveRef = useRef<{ phase: 'to_pickup' | 'to_drop'; requestedAt: number } | null>(null);
     const prevRideIdRef = useRef<string | null>(null);
     const [currentRouteSegmentIndex, setCurrentRouteSegmentIndex] = useState<number>(0); // Track which segment ambulance is on
+
+  // Ride Detail Modal
+  const [selectedRideDetail, setSelectedRideDetail] = useState<any | null>(null);
   
   // Autocomplete
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -122,6 +127,7 @@ export default function UserDashboard() {
         if (!prev) return; // first load
 
         console.log('[UserDashboard] Ride ended, resetting to booking state');
+        toast.success('Ride completed! Thank you for using VAYRIN.');
         prevRideIdRef.current = null;
         setPickup('');
         setDrop('');
@@ -143,6 +149,8 @@ export default function UserDashboard() {
         setWaitingCountdown(0);
         setArrivingCountdown(0);
         setCurrentRouteSegmentIndex(0);
+        setAmbEtaSeconds(120); // Reset ETA to default
+        setRemainingEtaSeconds(0); // Reset remaining ETA
         lastSupabaseUpdateRef.current = null;
         pendingMoveRef.current = null;
     }, [activeRide?.id]);
@@ -399,6 +407,10 @@ export default function UserDashboard() {
             const elapsedMs = Date.now() - ambAnimationStartTime;
             const totalMs = Math.max(ambEtaSeconds, 1) * 1000;
             const rawProgress = Math.min(elapsedMs / totalMs, 1);
+
+            // Update remaining ETA countdown (in seconds)
+            const remainingSec = Math.max(0, Math.ceil((totalMs - elapsedMs) / 1000));
+            setRemainingEtaSeconds(remainingSec);
 
             const easedProgress = rawProgress < 0.5
                 ? 2 * rawProgress * rawProgress
@@ -690,7 +702,7 @@ export default function UserDashboard() {
         });
 
         if (!rideId) {
-                alert("Ride request failed. Please check your network connection or try again later.");
+                toast.error('Ride request failed. Please check your network connection.');
         }
     };
 
@@ -729,7 +741,7 @@ export default function UserDashboard() {
               },
               (error) => {
                   console.error("Error getting location", error);
-                  alert("Could not access location. Please enable permissions.");
+                  toast.error('Could not access location. Please enable permissions.');
               }
           );
       }
@@ -807,9 +819,14 @@ export default function UserDashboard() {
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingProfile(true);
-    await updateProfile({ name: pName, address: pAddress, phone: pPhone, city: pCity });
+    try {
+      await updateProfile({ name: pName, address: pAddress, phone: pPhone, city: pCity });
+      toast.success('Profile updated successfully!');
+    } catch (err) {
+      console.error('Profile update failed:', err);
+      toast.error('Failed to update profile. Please try again.');
+    }
     setIsSubmittingProfile(false);
-    alert("Profile updated!");
   };
 
   return (
@@ -1008,25 +1025,30 @@ export default function UserDashboard() {
                                     <div className="flex flex-col h-full">
                                         <div className="flex-1">
                                             {/* Status Banner */}
-                                            <div className={`${(currentPhase === 'arriving' || currentPhase === 'waiting_at_pickup') ? 'bg-amber-50 border-amber-100' : 'bg-emerald-50 border-emerald-100'} border p-4 rounded-xl mb-6 flex items-center gap-4`}>
-                                                {(currentPhase === 'arriving' || currentPhase === 'waiting_at_pickup') ? (
+                                            <div className={`${currentPhase === 'completing' ? 'bg-blue-50 border-blue-100' : (currentPhase === 'arriving' || currentPhase === 'waiting_at_pickup') ? 'bg-amber-50 border-amber-100' : 'bg-emerald-50 border-emerald-100'} border p-4 rounded-xl mb-6 flex items-center gap-4`}>
+                                                {currentPhase === 'completing' ? (
+                                                    <CheckCircle2 size={24} className="text-blue-600" />
+                                                ) : (currentPhase === 'arriving' || currentPhase === 'waiting_at_pickup') ? (
                                                     <Clock size={24} className="text-amber-600" />
                                                 ) : (
                                                     <CheckCircle2 size={24} className="text-emerald-600" />
                                                 )}
                                                 <div className="flex-1">
-                                                    <div className={`font-bold ${(currentPhase === 'arriving' || currentPhase === 'waiting_at_pickup') ? 'text-amber-800' : 'text-emerald-800'}`}>
+                                                    <div className={`font-bold ${(currentPhase === 'arriving' || currentPhase === 'waiting_at_pickup') ? 'text-amber-800' : currentPhase === 'completing' ? 'text-blue-800' : 'text-emerald-800'}`}>
                                                         {currentPhase === 'to_pickup' && 'Driver on the way'}
                                                         {currentPhase === 'arriving' && 'Driver arrived!'}
                                                         {currentPhase === 'waiting_at_pickup' && 'Boarding...'}
                                                         {currentPhase === 'to_drop' && 'Ride in Progress'}
+                                                        {currentPhase === 'completing' && 'Arrived at Destination'}
                                                         {!currentPhase && activeRide.status === 'in_progress' && 'Ride in Progress'}
                                                     </div>
-                                                    <div className={`text-xs ${(currentPhase === 'arriving' || currentPhase === 'waiting_at_pickup') ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                    <div className={`text-xs ${(currentPhase === 'arriving' || currentPhase === 'waiting_at_pickup') ? 'text-amber-600' : currentPhase === 'completing' ? 'text-blue-600' : 'text-emerald-600'}`}>
                                                         {currentPhase === 'to_pickup' && 'Track vehicle on map'}
                                                         {currentPhase === 'arriving' && 'Preparing for pickup...'}
                                                         {currentPhase === 'waiting_at_pickup' && 'Board the ambulance now'}
-                                                        {(currentPhase === 'to_drop' || (!currentPhase && activeRide.status === 'in_progress')) && 'Heading to hospital'}
+                                                        {currentPhase === 'to_drop' && 'Heading to hospital'}
+                                                        {currentPhase === 'completing' && 'Driver will complete the trip'}
+                                                        {!currentPhase && activeRide.status === 'in_progress' && 'Heading to hospital'}
                                                     </div>
                                                 </div>
                                                 {/* Arriving countdown timer (50 sec) */}
@@ -1036,6 +1058,20 @@ export default function UserDashboard() {
                                                             {arrivingCountdown}s
                                                         </div>
                                                         <div className="text-xs text-amber-600">Arriving</div>
+                                                    </div>
+                                                )}
+                                                {/* Dynamic ETA countdown for to_pickup / to_drop phases */}
+                                                {(currentPhase === 'to_pickup' || currentPhase === 'to_drop') && remainingEtaSeconds > 0 && (
+                                                    <div className="flex flex-col items-center bg-emerald-100 px-4 py-2 rounded-lg">
+                                                        <div className="text-2xl font-bold text-emerald-700">
+                                                            {remainingEtaSeconds >= 60 
+                                                                ? `${Math.floor(remainingEtaSeconds / 60)}:${(remainingEtaSeconds % 60).toString().padStart(2, '0')}`
+                                                                : `${remainingEtaSeconds}s`
+                                                            }
+                                                        </div>
+                                                        <div className="text-xs text-emerald-600">
+                                                            {currentPhase === 'to_pickup' ? 'ETA' : 'To drop'}
+                                                        </div>
                                                     </div>
                                                 )}
                                                 {/* Waiting countdown timer (2 min) */}
@@ -1085,73 +1121,424 @@ export default function UserDashboard() {
                         </header>
 
                         {activeRide && (
-                            <div className="mb-6 p-4 rounded-2xl border border-white/10 bg-white/5">
-                                <div className="text-sm text-white/60">Active ride</div>
+                            <div className="mb-6 p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="text-sm text-emerald-400 font-medium">Active Ride</span>
+                                </div>
                                 <div className="font-bold text-white mt-1 truncate">{activeRide.pickupAddress} → {activeRide.dropAddress}</div>
-                                <div className="text-xs text-white/50 mt-1">Status: {activeRide.status}</div>
+                                <div className="text-xs text-white/50 mt-1">Status: <span className="text-emerald-400">{activeRide.status}</span></div>
                             </div>
                         )}
 
                         {isLoadingRides ? (
-                            <div className="text-white/60">Loading rides…</div>
+                            <div className="flex items-center gap-3 text-white/60">
+                                <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                                Loading rides…
+                            </div>
                         ) : (
-                            <div className="space-y-4 max-w-4xl">
+                            <div className="space-y-3 max-w-4xl">
                                 {myRides.length > 0 ? (
-                                    myRides.map((ride) => (
-                                        <Card key={ride.id} className="border border-white/10 bg-black p-5">
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="min-w-0">
-                                                    <div className="font-bold text-white truncate">{ride.pickup_address} → {ride.drop_address}</div>
-                                                    <div className="text-xs text-white/50 mt-1">{ride.created_at ? new Date(ride.created_at).toLocaleString() : ''}</div>
+                                    myRides.map((ride) => {
+                                        const statusColor = ride.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' 
+                                            : ride.status === 'cancelled' ? 'bg-red-500/20 text-red-400' 
+                                            : 'bg-white/10 text-white/70';
+                                        return (
+                                            <button 
+                                                key={ride.id} 
+                                                onClick={() => setSelectedRideDetail(ride)}
+                                                className="w-full text-left border border-white/10 bg-white/5 hover:bg-white/10 transition-all p-5 rounded-2xl group"
+                                            >
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="font-bold text-white truncate group-hover:text-white/90">{ride.pickup_address}</div>
+                                                        <div className="text-sm text-white/60 truncate mt-1">→ {ride.drop_address}</div>
+                                                        <div className="text-xs text-white/40 mt-2">{ride.created_at ? new Date(ride.created_at).toLocaleString() : ''}</div>
+                                                    </div>
+                                                    <div className="text-right shrink-0">
+                                                        <div className={`text-xs px-3 py-1 rounded-full ${statusColor} inline-block font-medium`}>{ride.status}</div>
+                                                        {typeof ride.price === 'number' && <div className="font-bold text-white mt-2 text-lg">₹{ride.price.toFixed(0)}</div>}
+                                                    </div>
                                                 </div>
-                                                <div className="text-right shrink-0">
-                                                    <div className="text-xs px-3 py-1 rounded-full bg-white/10 text-white/70 inline-block">{ride.status}</div>
-                                                    {typeof ride.price === 'number' && <div className="font-bold text-white mt-2">₹{ride.price.toFixed(0)}</div>}
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    ))
+                                            </button>
+                                        );
+                                    })
                                 ) : (
                                     <div className="text-center py-20 text-white/40 border border-dashed border-white/10 rounded-2xl">
-                                        <Clock size={48} className="mx-auto mb-4 text-white/20" />
-                                        <p>No rides yet.</p>
+                                        <AmbulanceIcon size={48} className="mx-auto mb-4 text-white/20" />
+                                        <p className="font-medium">No rides yet</p>
+                                        <p className="text-sm mt-1">Your ride history will appear here</p>
                                     </div>
                                 )}
                             </div>
                         )}
+
+                        {/* Ride Detail Modal */}
+                        <AnimatePresence>
+                            {selectedRideDetail && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }} 
+                                    animate={{ opacity: 1 }} 
+                                    exit={{ opacity: 0 }}
+                                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                                    onClick={() => setSelectedRideDetail(null)}
+                                >
+                                    <motion.div 
+                                        initial={{ scale: 0.95, opacity: 0 }} 
+                                        animate={{ scale: 1, opacity: 1 }} 
+                                        exit={{ scale: 0.95, opacity: 0 }}
+                                        className="bg-slate-900 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-white/10"
+                                        onClick={e => e.stopPropagation()}
+                                    >
+                                        {/* Header */}
+                                        <div className="p-6 border-b border-white/10">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-white">Ride Details</h3>
+                                                    <p className="text-white/50 text-sm mt-1">#{selectedRideDetail.id?.slice(0, 8)}</p>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setSelectedRideDetail(null)}
+                                                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                                >
+                                                    <X size={20} className="text-white/60" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="p-6 space-y-6">
+                                            {/* Status Badge */}
+                                            <div className="flex items-center justify-between">
+                                                <span className={`px-4 py-2 rounded-full font-medium text-sm ${
+                                                    selectedRideDetail.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' 
+                                                    : selectedRideDetail.status === 'cancelled' ? 'bg-red-500/20 text-red-400'
+                                                    : 'bg-amber-500/20 text-amber-400'
+                                                }`}>
+                                                    {selectedRideDetail.status?.toUpperCase()}
+                                                </span>
+                                                {typeof selectedRideDetail.price === 'number' && (
+                                                    <div className="text-3xl font-bold text-white">₹{selectedRideDetail.price.toFixed(0)}</div>
+                                                )}
+                                            </div>
+
+                                            {/* Route */}
+                                            <div className="space-y-4">
+                                                <div className="flex gap-4">
+                                                    <div className="flex flex-col items-center">
+                                                        <div className="w-3 h-3 rounded-full bg-blue-500" />
+                                                        <div className="w-0.5 h-12 bg-white/20" />
+                                                        <div className="w-3 h-3 rounded-full bg-red-500" />
+                                                    </div>
+                                                    <div className="flex-1 space-y-4">
+                                                        <div>
+                                                            <div className="text-xs text-white/50 uppercase font-medium">Pickup</div>
+                                                            <div className="text-white font-medium mt-1">{selectedRideDetail.pickup_address}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-xs text-white/50 uppercase font-medium">Drop-off</div>
+                                                            <div className="text-white font-medium mt-1">{selectedRideDetail.drop_address}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Ride Info Grid */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-white/5 rounded-xl p-4">
+                                                    <div className="text-xs text-white/50 uppercase">Distance</div>
+                                                    <div className="text-lg font-bold text-white mt-1">
+                                                        {selectedRideDetail.distance ? `${(selectedRideDetail.distance / 1000).toFixed(1)} km` : 'N/A'}
+                                                    </div>
+                                                </div>
+                                                <div className="bg-white/5 rounded-xl p-4">
+                                                    <div className="text-xs text-white/50 uppercase">Duration</div>
+                                                    <div className="text-lg font-bold text-white mt-1">
+                                                        {selectedRideDetail.duration ? `${Math.ceil(selectedRideDetail.duration / 60)} min` : 'N/A'}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Date & Time */}
+                                            <div className="bg-white/5 rounded-xl p-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Calendar size={20} className="text-white/50" />
+                                                    <div>
+                                                        <div className="text-xs text-white/50">Date & Time</div>
+                                                        <div className="text-white font-medium">
+                                                            {selectedRideDetail.created_at ? new Date(selectedRideDetail.created_at).toLocaleString('en-IN', {
+                                                                weekday: 'long',
+                                                                year: 'numeric',
+                                                                month: 'long',
+                                                                day: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            }) : 'N/A'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Ambulance Type */}
+                                            {selectedRideDetail.ambulance_id && (
+                                                <div className="bg-white/5 rounded-xl p-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <AmbulanceIcon size={20} className="text-white/50" />
+                                                        <div>
+                                                            <div className="text-xs text-white/50">Ambulance</div>
+                                                            <div className="text-white font-medium">Emergency Medical Transport</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Payment Info */}
+                                            {typeof selectedRideDetail.price === 'number' && (
+                                                <div className="bg-white/5 rounded-xl p-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <CreditCard size={20} className="text-white/50" />
+                                                            <div>
+                                                                <div className="text-xs text-white/50">Payment</div>
+                                                                <div className="text-white font-medium">Cash</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-emerald-400 font-bold">₹{selectedRideDetail.price.toFixed(0)}</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Footer */}
+                                        <div className="p-6 border-t border-white/10">
+                                            <button 
+                                                onClick={() => setSelectedRideDetail(null)}
+                                                className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-white/90 transition-colors"
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
                 )}
 
                 {/* --- SETTINGS TAB --- */}
                 {activeTab === 'SETTINGS' && (
-                    <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto p-6 md:p-10 bg-black">
-                         <div className="max-w-xl mx-auto">
-                             <Card className="bg-black border border-white/10 p-8">
-                                <div className="mb-8 pb-6 border-b border-white/10">
-                                    <h3 className="text-2xl font-bold text-white">Settings</h3>
-                                    <p className="text-white/50 text-sm mt-1">Manage your profile details</p>
+                    <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto bg-black">
+                        <div className="max-w-2xl mx-auto">
+                            {/* Profile Header - Uber Style */}
+                            <div className="p-6 md:p-10 border-b border-white/10">
+                                <div className="flex items-center gap-5">
+                                    <div className="relative">
+                                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center overflow-hidden border-2 border-white/20">
+                                            <img 
+                                                src={`https://ui-avatars.com/api/?name=${pName || 'User'}&background=1a1a1a&color=fff&size=80`} 
+                                                alt="Profile" 
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-black">
+                                            <Star size={12} className="text-white fill-white" />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h2 className="text-2xl font-bold text-white">{pName || 'User'}</h2>
+                                        <p className="text-white/50 text-sm mt-1">{currentUser?.email}</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <div className="flex items-center gap-1 text-xs text-white/60 bg-white/10 px-2 py-1 rounded-full">
+                                                <Star size={10} className="text-amber-400 fill-amber-400" />
+                                                <span>4.9</span>
+                                            </div>
+                                            <div className="text-xs text-white/40">•</div>
+                                            <div className="text-xs text-white/60">{myRides.length} rides</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <form onSubmit={handleProfileUpdate} className="space-y-6">
-                                     <div>
-                                         <Label className="text-white/70 text-sm font-medium mb-2 block">Full Name</Label>
-                                         <Input value={pName} onChange={e => setPName(e.target.value)} className="bg-white/5 border-white/20 text-white placeholder:text-white/30 h-12 rounded-xl focus:border-white/40" placeholder="Enter your name" />
-                                     </div>
-                                     <div>
-                                         <Label className="text-white/70 text-sm font-medium mb-2 block">Phone Number</Label>
-                                         <Input value={pPhone} onChange={e => setPPhone(e.target.value)} className="bg-white/5 border-white/20 text-white placeholder:text-white/30 h-12 rounded-xl focus:border-white/40" placeholder="+91 XXXXX XXXXX" />
-                                     </div>
-                                     <div>
-                                         <Label className="text-white/70 text-sm font-medium mb-2 block">Home Address</Label>
-                                         <Input value={pAddress} onChange={e => setPAddress(e.target.value)} className="bg-white/5 border-white/20 text-white placeholder:text-white/30 h-12 rounded-xl focus:border-white/40" placeholder="Enter your address" />
-                                     </div>
-                                     <div>
-                                         <Label className="text-white/70 text-sm font-medium mb-2 block">City</Label>
-                                         <Input value={pCity} onChange={e => setPCity(e.target.value)} className="bg-white/5 border-white/20 text-white placeholder:text-white/30 h-12 rounded-xl focus:border-white/40" placeholder="Enter your city" />
-                                     </div>
-                                     <div className="pt-4"><Button type="submit" isLoading={isSubmittingProfile} className="w-full h-12 bg-white text-black hover:bg-white/90 font-bold text-base rounded-xl">Save Changes</Button></div>
+                            </div>
+
+                            {/* Account Section */}
+                            <div className="p-6 md:px-10">
+                                <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Account</h3>
+                                <div className="space-y-1">
+                                    <button className="w-full flex items-center gap-4 p-4 hover:bg-white/5 rounded-xl transition-colors group">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                            <User size={18} className="text-white/70" />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <div className="font-medium text-white">Edit Profile</div>
+                                            <div className="text-xs text-white/50">Name, photo, email</div>
+                                        </div>
+                                        <ChevronRight size={18} className="text-white/30 group-hover:text-white/60 transition-colors" />
+                                    </button>
+
+                                    <button className="w-full flex items-center gap-4 p-4 hover:bg-white/5 rounded-xl transition-colors group">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                            <MapPinned size={18} className="text-white/70" />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <div className="font-medium text-white">Saved Places</div>
+                                            <div className="text-xs text-white/50">Home, work, favorites</div>
+                                        </div>
+                                        <ChevronRight size={18} className="text-white/30 group-hover:text-white/60 transition-colors" />
+                                    </button>
+
+                                    <button className="w-full flex items-center gap-4 p-4 hover:bg-white/5 rounded-xl transition-colors group">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                            <Shield size={18} className="text-white/70" />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <div className="font-medium text-white">Safety</div>
+                                            <div className="text-xs text-white/50">Emergency contacts, trusted contacts</div>
+                                        </div>
+                                        <ChevronRight size={18} className="text-white/30 group-hover:text-white/60 transition-colors" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Profile Details Form */}
+                            <div className="p-6 md:px-10 border-t border-white/10">
+                                <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Profile Details</h3>
+                                <form onSubmit={handleProfileUpdate} className="space-y-4">
+                                    <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                                        <User size={18} className="text-white/50" />
+                                        <div className="flex-1">
+                                            <label className="text-xs text-white/40 block">Full Name</label>
+                                            <input 
+                                                value={pName} 
+                                                onChange={e => setPName(e.target.value)} 
+                                                className="w-full bg-transparent text-white font-medium focus:outline-none mt-1" 
+                                                placeholder="Enter your name" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                                        <Phone size={18} className="text-white/50" />
+                                        <div className="flex-1">
+                                            <label className="text-xs text-white/40 block">Phone Number</label>
+                                            <input 
+                                                value={pPhone} 
+                                                onChange={e => setPPhone(e.target.value)} 
+                                                className="w-full bg-transparent text-white font-medium focus:outline-none mt-1" 
+                                                placeholder="+91 XXXXX XXXXX" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                                        <Home size={18} className="text-white/50" />
+                                        <div className="flex-1">
+                                            <label className="text-xs text-white/40 block">Home Address</label>
+                                            <input 
+                                                value={pAddress} 
+                                                onChange={e => setPAddress(e.target.value)} 
+                                                className="w-full bg-transparent text-white font-medium focus:outline-none mt-1" 
+                                                placeholder="Enter your address" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                                        <MapPin size={18} className="text-white/50" />
+                                        <div className="flex-1">
+                                            <label className="text-xs text-white/40 block">City</label>
+                                            <input 
+                                                value={pCity} 
+                                                onChange={e => setPCity(e.target.value)} 
+                                                className="w-full bg-transparent text-white font-medium focus:outline-none mt-1" 
+                                                placeholder="Enter your city" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <button 
+                                        type="submit" 
+                                        disabled={isSubmittingProfile}
+                                        className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {isSubmittingProfile ? (
+                                            <>
+                                                <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            'Save Changes'
+                                        )}
+                                    </button>
                                 </form>
-                             </Card>
-                         </div>
+                            </div>
+
+                            {/* Preferences Section */}
+                            <div className="p-6 md:px-10 border-t border-white/10">
+                                <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Preferences</h3>
+                                <div className="space-y-1">
+                                    <button className="w-full flex items-center gap-4 p-4 hover:bg-white/5 rounded-xl transition-colors group">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                            <Bell size={18} className="text-white/70" />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <div className="font-medium text-white">Notifications</div>
+                                            <div className="text-xs text-white/50">Push, email, SMS</div>
+                                        </div>
+                                        <ChevronRight size={18} className="text-white/30 group-hover:text-white/60 transition-colors" />
+                                    </button>
+
+                                    <button className="w-full flex items-center gap-4 p-4 hover:bg-white/5 rounded-xl transition-colors group">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                            <CreditCard size={18} className="text-white/70" />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <div className="font-medium text-white">Payment Methods</div>
+                                            <div className="text-xs text-white/50">Cards, UPI, Wallet</div>
+                                        </div>
+                                        <ChevronRight size={18} className="text-white/30 group-hover:text-white/60 transition-colors" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Support Section */}
+                            <div className="p-6 md:px-10 border-t border-white/10">
+                                <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider mb-4">Support</h3>
+                                <div className="space-y-1">
+                                    <button className="w-full flex items-center gap-4 p-4 hover:bg-white/5 rounded-xl transition-colors group">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                            <HelpCircle size={18} className="text-white/70" />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <div className="font-medium text-white">Help Center</div>
+                                            <div className="text-xs text-white/50">FAQs and support articles</div>
+                                        </div>
+                                        <ChevronRight size={18} className="text-white/30 group-hover:text-white/60 transition-colors" />
+                                    </button>
+
+                                    <button className="w-full flex items-center gap-4 p-4 hover:bg-white/5 rounded-xl transition-colors group">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                            <FileText size={18} className="text-white/70" />
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                            <div className="font-medium text-white">Legal</div>
+                                            <div className="text-xs text-white/50">Terms, privacy policy</div>
+                                        </div>
+                                        <ChevronRight size={18} className="text-white/30 group-hover:text-white/60 transition-colors" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Logout Section */}
+                            <div className="p-6 md:px-10 border-t border-white/10 pb-10">
+                                <button 
+                                    onClick={logout}
+                                    className="w-full flex items-center gap-4 p-4 hover:bg-red-500/10 rounded-xl transition-colors group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                                        <LogOut size={18} className="text-red-400" />
+                                    </div>
+                                    <div className="flex-1 text-left">
+                                        <div className="font-medium text-red-400">Log Out</div>
+                                        <div className="text-xs text-white/50">{currentUser?.email}</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>

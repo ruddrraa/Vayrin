@@ -416,41 +416,72 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, liveRoute
         const loadAmbulanceIcon = async () => {
             if (!map.hasImage?.('ambulance-icon')) {
                 try {
-                    // Create ambulance icon as canvas
+                    // Load the actual ambulance image from public folder
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.src = '/ambulance-top.jpg';
+                    
+                    await new Promise<void>((resolve, reject) => {
+                        img.onload = () => resolve();
+                        img.onerror = () => reject(new Error('Failed to load ambulance image'));
+                    });
+                    
+                    // Draw to canvas for processing (resize and add direction indicator)
+                    const size = 56;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        // Draw the ambulance image centered and scaled
+                        ctx.save();
+                        ctx.translate(size / 2, size / 2);
+                        // The image is top-view, may need rotation to point upward
+                        ctx.rotate(-Math.PI / 2); // Rotate to point up
+                        ctx.drawImage(img, -size / 2 + 4, -size / 2 + 4, size - 8, size - 8);
+                        ctx.restore();
+                        
+                        // Add subtle glow/border
+                        ctx.strokeStyle = 'rgba(249, 115, 22, 0.8)';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    
+                    const imageData = ctx?.getImageData(0, 0, size, size);
+                    if (imageData && map.addImage) {
+                        map.addImage('ambulance-icon', { width: size, height: size, data: imageData.data });
+                    }
+                } catch (e) {
+                    console.warn('Failed to load ambulance image, using fallback:', e);
+                    // Fallback: Create simple orange circle with cross
                     const size = 48;
                     const canvas = document.createElement('canvas');
                     canvas.width = size;
                     canvas.height = size;
                     const ctx = canvas.getContext('2d');
                     if (ctx) {
-                        // Draw ambulance icon (orange car-like shape)
-                        ctx.fillStyle = '#f97316'; // Orange
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 2;
-                        
-                        // Main body (rounded rectangle)
+                        // Orange circle
+                        ctx.fillStyle = '#f97316';
                         ctx.beginPath();
-                        ctx.roundRect(8, 12, 32, 24, 6);
+                        ctx.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
                         ctx.fill();
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 3;
                         ctx.stroke();
                         
-                        // Front cabin
-                        ctx.fillStyle = '#ea580c';
-                        ctx.beginPath();
-                        ctx.roundRect(28, 16, 10, 16, 4);
-                        ctx.fill();
-                        
-                        // Cross symbol (medical)
+                        // White cross
                         ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(18, 20, 8, 3);
-                        ctx.fillRect(20.5, 17, 3, 9);
+                        ctx.fillRect(size / 2 - 8, size / 2 - 2, 16, 4);
+                        ctx.fillRect(size / 2 - 2, size / 2 - 8, 4, 16);
                         
-                        // Direction indicator (arrow at top)
+                        // Direction arrow at top
                         ctx.fillStyle = '#1e293b';
                         ctx.beginPath();
-                        ctx.moveTo(24, 4);
-                        ctx.lineTo(30, 12);
-                        ctx.lineTo(18, 12);
+                        ctx.moveTo(size / 2, 2);
+                        ctx.lineTo(size / 2 + 6, 10);
+                        ctx.lineTo(size / 2 - 6, 10);
                         ctx.closePath();
                         ctx.fill();
                     }
@@ -459,8 +490,6 @@ export const MapComponent = ({ center, zoom = 14, markers = [], route, liveRoute
                     if (imageData && map.addImage) {
                         map.addImage('ambulance-icon', { width: size, height: size, data: imageData.data });
                     }
-                } catch (e) {
-                    console.warn('Failed to create ambulance icon:', e);
                 }
             }
             

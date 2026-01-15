@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { AnimatePresence } from 'framer-motion';
 import { Ambulance as AmbulanceIcon, Users, Droplet, Settings, MapPin, Truck, ShoppingBag } from 'lucide-react';
+import { toast } from '../lib/toast';
 
 // Component imports
 import { DashboardLayout, Header } from '../components/layout';
@@ -139,9 +140,10 @@ export default function HospitalDashboard() {
         city: pCity,
         phone: pPhone,
       });
-      alert('Profile Updated Successfully!');
+      toast.success('Profile Updated Successfully!');
     } catch (e) {
       console.error(e);
+      toast.error('Failed to update profile');
     } finally {
       setIsSubmittingProfile(false);
     }
@@ -175,11 +177,11 @@ export default function HospitalDashboard() {
       });
 
       if (error) throw error;
-      alert(`Blood request sent successfully! ${urgency !== 'NORMAL' ? `(${urgency})` : ''}`);
+      toast.success(`Blood request sent successfully! ${urgency !== 'NORMAL' ? `(${urgency})` : ''}`);
       setActiveTab('INTER_ORDERS');
     } catch (error) {
       console.error('Failed to create blood request:', error);
-      alert('Failed to send request. Please try again.');
+      toast.error('Failed to send request. Please try again.');
     }
   };
 

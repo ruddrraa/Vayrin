@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigation, CheckCircle, X } from 'lucide-react';
+import { Navigation, CheckCircle, X, Loader2 } from 'lucide-react';
 import { Card, Button } from '../common';
 import { RideRequest } from '../../types';
 
@@ -8,6 +8,7 @@ interface RideCardProps {
   onAccept?: (rideId: string) => void;
   onCancel?: (rideId: string) => void;
   isDriverView?: boolean;
+  isAccepting?: boolean;
 }
 
 export const RideCard: React.FC<RideCardProps> = ({
@@ -15,6 +16,7 @@ export const RideCard: React.FC<RideCardProps> = ({
   onAccept,
   onCancel,
   isDriverView = false,
+  isAccepting = false,
 }) => {
   const statusColors: Record<string, string> = {
     searching: 'bg-yellow-100 text-yellow-700',
@@ -64,8 +66,20 @@ export const RideCard: React.FC<RideCardProps> = ({
       </div>
 
       {isDriverView && ride.status === 'searching' && onAccept && (
-        <Button onClick={() => onAccept(ride.id)} className="w-full">
-          <CheckCircle size={18} className="mr-2" /> Accept Ride
+        <Button 
+          onClick={() => onAccept(ride.id)} 
+          className="w-full"
+          disabled={isAccepting}
+        >
+          {isAccepting ? (
+            <>
+              <Loader2 size={18} className="mr-2 animate-spin" /> Accepting...
+            </>
+          ) : (
+            <>
+              <CheckCircle size={18} className="mr-2" /> Accept Ride
+            </>
+          )}
         </Button>
       )}
 
